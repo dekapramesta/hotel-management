@@ -8,6 +8,7 @@ class Dashboard extends CI_Controller{
     parent::__construct();
 
 
+
     if (!$this->session->userdata('logged_in')) {
         redirect('login'); // Jika belum login, redirect ke login
     }
@@ -17,6 +18,7 @@ class Dashboard extends CI_Controller{
       show_error('Anda tidak memiliki akses ke halaman ini.', 403);
       // atau redirect('dashboard/user'); // bisa juga ke halaman user biasa
     }
+    $this->load->model('Room_model');
 
     $this->load->model('Transaksi_model');
 
@@ -33,6 +35,19 @@ class Dashboard extends CI_Controller{
       $this->load->view('dashboard/dashboard');
       $this->load->view('templates/footer');
   }
+
+    public function filter() {
+        $search = $this->input->post('search');
+        $floor  = $this->input->post('floor');
+        $status = $this->input->post('status');
+
+        $rooms = $this->Room_model->get_rooms($search, $floor, $status);
+
+        echo json_encode([
+            'success' => true,
+            'rooms' => $rooms
+        ]);
+    }
 
   public function identify(){
 
