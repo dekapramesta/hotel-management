@@ -1,279 +1,210 @@
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.18.0/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
 
- <style>
-    /* Smooth loading animation */
-    .pulse {
-      animation: pulse 1.2s ease-in-out infinite;
-    }
-    @keyframes pulse {
-      0% { opacity: .4; }
-      50% { opacity: 1; }
-      100% { opacity: .4; }
-    }
-  </style>
+<style>
+  .pulse {
+    animation: pulse 1.2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0% { opacity: .4; }
+    50% { opacity: 1; }
+    100% { opacity: .4; }
+  }
+</style>
+
 <main>
   <div class="min-h-screen flex items-center justify-center p-4">
+    <div class="bg-white shadow-xl rounded-2xl p-6 w-full max-w-4xl border border-gray-200">
+      
+      <h2 class="text-2xl font-bold text-gray-700 mb-2 text-center">
+        🔍 Face Recognition Identify
+      </h2>
+      <p class="text-gray-500 text-center mb-6">
+        Kamera aktif — sistem akan mengenali wajah secara otomatis
+      </p>
+      
+      <div class="flex gap-8 items-start">
+        <!-- Camera Section -->
+        <div class="flex-1">
+          <div class="w-full flex justify-center text-center relative">
+            <div class="relative inline-block">
+              <video id="videoFeed" autoplay playsinline 
+                class="rounded-xl shadow-md border border-gray-300 w-[400px] h-[320px] object-cover">
+              </video>
 
-  <div class="bg-white shadow-xl rounded-2xl p-6 w-full max-w-lg border border-gray-200">
-    
-    <h2 class="text-2xl font-bold text-gray-700 mb-2 text-center">
-      🔍 Face Recognition Identify
-    </h2>
-    <p class="text-gray-500 text-center mb-4">
-      Kamera aktif — sistem akan mengenali wajah secara otomatis
-    </p>
-    <div class="w-full flex justify-center text-center relative">
-  <div class="relative inline-block">
-    <video id="video" autoplay playsinline 
-      class="rounded-xl shadow-md border border-gray-300 w-[350px] max-w-full"></video>
+              <div id="statusBadge"
+                class="absolute top-3 right-3 bg-gray-800 text-white text-sm py-1 px-3 rounded-lg">
+                Memulai kamera...
+              </div>
+            </div>
+          </div>
 
-    <div id="status_badge"
-      class="absolute top-2 right-2 bg-gray-800 text-white text-xs py-1 px-2 rounded-lg">
-      Memulai kamera...
+          <!-- Loading / Result -->
+          <div class="mt-5 text-center">
+            <div id="loadingText" class="text-gray-600 text-base pulse">Mendeteksi wajah...</div>
+            <div id="resultText" class="text-lg font-semibold mt-2"></div>
+          </div>
+        </div>
+
+        <!-- Booking Box -->
+        <div id="bookingBox" class="flex-1 hidden bg-gray-50 border border-gray-300 rounded-xl p-4 min-h-[320px]">
+          <h3 class="text-xl font-bold text-gray-700 mb-4">📦 Booking Anda</h3>
+          <div id="bookingList" class="text-sm text-gray-700 space-y-2 max-h-[260px] overflow-y-auto">
+            Memuat data booking…
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
-</div>
-
-
-    <!-- Loading / Result -->
-    <div class="mt-5 text-center">
-      <div id="loading_text" class="text-gray-600 text-sm pulse">Mendeteksi wajah gaes...</div>
-      <div id="result_text" class="text-lg font-semibold mt-2"></div>
-    </div>
-
-  </div>
-
-</div>
 </main>
 
 <script>
-  const video = document.getElementById("video");
-  const statusBadge = document.getElementById("status_badge");
-  const resultText = document.getElementById("result_text");
-  const loadingText = document.getElementById("loading_text");
-  
-  let isProcessing = false;
-  let lastCaptureTime = 0;
-  const CAPTURE_INTERVAL = 60000; // 1 menit dalam milidetik
-  let captureInterval;
+let faceMesh, camera;
+let alreadyCaptured = false;
+let lastDetected = 0;
 
-  // 1. HIDUPKAN KAMERA
-  function startCamera() {
-    navigator.mediaDevices.getUserMedia({ 
-      video: { 
-        width: 640, 
-        height: 480,
-        facingMode: "user" 
-      } 
-    })
-    .then(stream => {
-      video.srcObject = stream;
-      statusBadge.textContent = "Kamera aktif";
-      statusBadge.classList.remove("bg-gray-800");
-      statusBadge.classList.add("bg-green-600");
-      
-      // Mulai capture interval setelah kamera ready
-      video.addEventListener('loadeddata', startCaptureInterval);
-    })
-    .catch((err) => {
-      console.error("Error accessing camera:", err);
-      statusBadge.textContent = "Gagal akses kamera";
-      statusBadge.classList.remove("bg-gray-800");
-      statusBadge.classList.add("bg-red-600");
+function startDetection() {
+    const video = document.getElementById("videoFeed");
+    const statusBadge = document.getElementById("statusBadge");
+
+    faceMesh = new FaceMesh({
+        locateFile: file => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`,
     });
-  }
 
-  // 2. START CAPTURE INTERVAL
-  function startCaptureInterval() {
-    // Hapus interval sebelumnya jika ada
-    if (captureInterval) {
-      clearInterval(captureInterval);
-    }
-    
-    // Capture pertama langsung
-    setTimeout(() => {
-      captureAndSend();
-    }, 2000);
-    
-    // Set interval untuk capture berikutnya
-    captureInterval = setInterval(() => {
-      captureAndSend();
-    }, CAPTURE_INTERVAL);
-    
-    console.log("🔄 Capture interval started: 1 minute");
-  }
+    faceMesh.setOptions({
+        maxNumFaces: 1,
+        minDetectionConfidence: 0.55,
+        minTrackingConfidence: 0.55
+    });
 
-  // 3. FUNGSI CAPTURE DAN KIRIM
-  function captureAndSend() {
-    const now = Date.now();
-    
-    // Cek jika masih dalam interval atau sedang processing
-    if (isProcessing || (now - lastCaptureTime) < CAPTURE_INTERVAL) {
-      console.log("⏳ Skip capture - masih dalam interval atau processing");
-      return;
-    }
+    faceMesh.onResults(results => {
+        const now = Date.now();
 
-    // Validasi video ready
-    if (!video.videoWidth || !video.videoHeight) {
-      console.log("⏳ Video belum ready");
-      return;
-    }
+        // TIDAK ADA WAJAH
+        if (!results.multiFaceLandmarks?.length) {
+            statusBadge.innerHTML = "Tidak ada wajah";
+            statusBadge.className = "absolute top-3 right-3 bg-red-600 text-white text-sm py-1 px-3 rounded-lg";
 
-    isProcessing = true;
-    lastCaptureTime = now;
+            if (now - lastDetected > 1200) {
+                alreadyCaptured = false; // reset scan
+            }
+            return;
+        }
 
-    // Update UI
-    updateUIProcessing();
+        // WAJAH TERDETEKSI
+        statusBadge.innerHTML = "Wajah terdeteksi";
+        statusBadge.className = "absolute top-3 right-3 bg-green-600 text-white text-sm py-1 px-3 rounded-lg";
 
-    // Buat canvas dan capture
+        lastDetected = now;
+
+        // KIRIM SEKALI
+        if (!alreadyCaptured) {
+            alreadyCaptured = true;
+            captureAndVerify();
+        }
+    });
+
+    camera = new Camera(video, {
+        onFrame: async () => await faceMesh.send({ image: video }),
+        width: 400,
+        height: 320
+    });
+
+    camera.start();
+}
+
+// CAPTURE + SEND
+async function captureAndVerify() {
+    const video = document.getElementById("videoFeed");
+    const resultText = document.getElementById("resultText");
+    const loadingText = document.getElementById("loadingText");
+
+    loadingText.innerHTML = "⏳ Memverifikasi wajah...";
+    loadingText.classList.add("pulse");
+
+    // capture canvas
     const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-    
-    // Set canvas size sesuai video
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
-    
-    // Draw video frame ke canvas
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    canvas.getContext("2d").drawImage(video, 0, 0);
 
-    // Kompresi gambar untuk mengurangi size
-    const base64 = canvas.toDataURL("image/jpeg", 0.7); // 70% quality
+    const blob = await new Promise(r => canvas.toBlob(r, "image/jpeg", 0.9));
+    const formData = new FormData();
+    formData.append("file", blob, "capture.jpg");
 
-    // Kirim ke server
-    sendToServer(base64);
-  }
+    try {
+        const res = await fetch("<?= base_url('face/verify'); ?>", {
+            method: "POST",
+            body: formData
+        });
 
-  // 4. KIRIM KE SERVER
-  function sendToServer(base64Image) {
-    fetch("<?= base_url('dashboard/scan_face') ?>", {
-      method: "POST",
-      headers: { 
-        "Content-Type": "application/json" 
-      },
-      body: JSON.stringify({ 
-        image: base64Image,
-        timestamp: Date.now()
-      })
-    })
-    .then(async (res) => {
-      if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
-      }
-      return res.json();
-    })
-    .then(data => {
-      handleServerResponse(data);
-    })
-    .catch(err => {
-      console.error("Fetch error:", err);
-      handleError("Error memproses wajah");
-    })
-    .finally(() => {
-      isProcessing = false;
-    });
-  }
+        const data = await res.json();
+        console.log("Verify:", data);
 
-  // 5. HANDLE RESPONSE SERVER
-  function handleServerResponse(data) {
-    loadingText.style.display = "none";
+        handleVerifyResponse(data);
 
-    if (data.status === "ok" && data.data) {
-      // Wajah dikenali
-      resultText.innerHTML = `
-        <span class="text-green-600 font-semibold">✔ ${data.data.name}</span><br>
-        <span class="text-gray-600 text-sm">Email: ${data.data.email}</span><br>
-        <span class="text-gray-500 text-xs">Similarity: ${data.data.distance.toFixed(4)}</span>
-      `;
-      
-      // Tampilkan pesan sukses lebih lama
-      showTemporarySuccess();
-      
-    } else if (data.status === "not_found") {
-      // Wajah tidak dikenali
-      resultText.innerHTML = `
-        <span class="text-red-500 font-semibold">✘ Tidak Dikenali</span><br>
-        <span class="text-gray-600 text-sm">Wajah tidak terdaftar</span>
-      `;
-    } else {
-      // Error dari server
-      handleError(data.message || "Error tidak diketahui");
+    } catch (err) {
+        resultText.innerHTML = "<span class='text-red-600'>Gagal verifikasi!</span>";
+        alreadyCaptured = false;
     }
-  }
+}
 
-  // 6. UPDATE UI SAAT PROCESSING
-  function updateUIProcessing() {
-    loadingText.style.display = "block";
-    resultText.innerHTML = `
-      <span class="text-blue-600">🔄 Memindai wajah...</span><br>
-      <span class="text-gray-500 text-xs">${new Date().toLocaleTimeString()}</span>
-    `;
-  }
+// HANDLE RESPONSE
+function handleVerifyResponse(data) {
+    const resultText = document.getElementById("resultText");
 
-  // 7. HANDLE ERROR
-  function handleError(message) {
-    loadingText.style.display = "none";
-    resultText.innerHTML = `
-      <span class="text-red-600 font-semibold">⚠ ${message}</span><br>
-      <span class="text-gray-500 text-xs">Akan dicoba lagi dalam 1 menit</span>
-    `;
-  }
-
-  // 8. TAMPILKAN SUKSES SEMENTARA
-  function showTemporarySuccess() {
-    // Optional: Tambahkan efek visual untuk success
-    resultText.classList.add("p-2", "bg-green-50", "rounded");
-    
-    setTimeout(() => {
-      resultText.classList.remove("p-2", "bg-green-50", "rounded");
-    }, 5000);
-  }
-
-  // 9. MANUAL CAPTURE (jika perlu tombol manual)
-  function manualCapture() {
-    const now = Date.now();
-    if (isProcessing) {
-      alert("Sedang memproses, tunggu sebentar...");
-      return;
+    if (!data.success) {
+        resultText.innerHTML = "<span class='text-red-600'>❌ Wajah tidak dikenali</span>";
+        alreadyCaptured = false;
+        return;
     }
-    
-    if ((now - lastCaptureTime) < 10000) { // Minimal 10 detik untuk manual
-      alert("Tunggu 10 detik sebelum capture berikutnya");
-      return;
-    }
-    
-    captureAndSend();
-  }
 
-  // 10. CLEANUP
-  function stopCamera() {
-    if (captureInterval) {
-      clearInterval(captureInterval);
-      captureInterval = null;
-    }
-    
-    if (video.srcObject) {
-      const tracks = video.srcObject.getTracks();
-      tracks.forEach(track => track.stop());
-      video.srcObject = null;
-    }
-  }
+    resultText.innerHTML =
+        `<span class='text-green-600'>✔ Halo <b>${data.nama}</b> (${data.nipp})</span>`;
 
-  // Event listener untuk page visibility
-  document.addEventListener('visibilitychange', function() {
-    if (document.hidden) {
-      // Page tidak terlihat, hentikan sementara
-      if (captureInterval) {
-        clearInterval(captureInterval);
-        captureInterval = null;
-      }
-    } else {
-      // Page visible again, restart interval
-      startCaptureInterval();
+    loadBooking(data.id);
+}
+
+// LOAD BOOKING
+async function loadBooking(userId) {
+    const box = document.getElementById("bookingBox");
+    const list = document.getElementById("bookingList");
+
+    box.classList.remove("hidden");
+    list.innerHTML = "⏳ Mengambil data booking...";
+
+    try {
+        const res = await fetch("<?= base_url('booking/get_by_user/'); ?>" + userId);
+        const data = await res.json();
+
+        if (!data.length) {
+            list.innerHTML = "<span class='text-gray-500'>Tidak ada booking aktif</span>";
+            return;
+        }
+
+        let html = "";
+        data.forEach(b => {
+            html += `
+              <div class="p-3 bg-white border border-gray-200 rounded-lg text-sm">
+                <div class="font-semibold">🏨 ${b.room_number} (${b.floor_name})</div>
+                <div class="text-xs text-gray-600 mt-1">
+                  <div><b>Nama:</b> ${b.nama}</div>
+                  <div><b>Jabatan:</b> ${b.jabatan}</div>
+                  <div><b>Check-in:</b> ${b.check_in_date}</div>
+                  <div><b>Check-out:</b> ${b.check_out_date}</div>
+                </div>
+              </div>`;
+        });
+
+        list.innerHTML = html;
+
+    } catch (e) {
+        list.innerHTML = "<span class='text-red-600'>Gagal load booking!</span>";
     }
-  });
+}
 
-  // Start aplikasi
-  startCamera();
-
-  // Cleanup ketika page unload
-  window.addEventListener('beforeunload', stopCamera);
+startDetection();
 </script>
