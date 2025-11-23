@@ -84,7 +84,7 @@ class Room_model extends CI_Model
 
     public function getOneRoomAvail($check_out_date)
     {
-        $sql = "select * from rooms where id not in (select room_id from bookings where check_out_date >= '$check_out_date') and status not in ('booked', 'occupied') order by id asc limit 1";
+        $sql = "select * from rooms where id not in (select room_id from bookings where check_out_date >= date_format('$check_out_date', '%d/%m/%y')) and status not in ('booked', 'occupied') order by id asc limit 1";
         return $this->db->query($sql)->result_array();
     }
 }

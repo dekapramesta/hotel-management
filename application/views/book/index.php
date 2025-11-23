@@ -13,10 +13,10 @@
                     <i class="bi bi-file-earmark-arrow-up pe-1"></i>
                     Import Excel
                 </button>
-                <button type="button" class="btn btn-success">
+                <a href="<?= base_url(); ?>Booking/download_template" target="_blank" class="btn btn-success">
                     <i class="bi bi-file-earmark-arrow-down pe-1"></i>
                     Template
-                </button>
+                </a>
                 <button type="button" id="btnSubmit" class="btn btn-primary" style="display: none;">Submit</button>
             </div>
         </div>

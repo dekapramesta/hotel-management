@@ -81,11 +81,16 @@ class Booking_model extends CI_Model
             $keys[] = $key;
 
             switch ($key) {
+                case 'check_in_date':
+                    $values[] = "str_to_date(" . $value . ", '%d/%m/%Y')";
+                    break;
+                case 'check_out_date':
+                    $values[] = "str_to_date(" . $value . ", '%d/%m/%Y')";
+                    break;
                 default:
                     $values[] = $value;
                     break;
             }
-            // $values[] = " to_date(" . $value . ", 'mm/dd/yyyy hh24:mi')";
         }
 
         $variableAdd = implode(', ', $keys);

@@ -147,4 +147,44 @@ class Booking extends CI_Controller
             $this->ErrorHandler(500, 'Terjadi Kesalahan ' . $th->getMessage());
         }
     }
+
+    public function download_template()
+    {
+        // --- 1. Tentukan Path File Template ---
+        // Ganti dengan path template Excel Anda yang sudah ada
+        try {
+            $template_file_path = FCPATH . 'assets/template.xlsx';
+
+            if (!file_exists($template_file_path)) {
+                throw new Exception('Template file not found at: ' . $template_file_path);
+            }
+
+            // --- 2. Load Spreadsheet dari File Template ---
+            // Tentukan Reader (misalnya, Xlsx)
+            $reader = new \PhpOffice\PhpSpreadsheet\Reader\Xlsx;
+            $spreadsheet = $reader->load($template_file_path);
+
+            $filename = 'Template_Booking_Batch_' . date('Ymd') . '.xlsx';
+
+            header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            header('Content-Disposition: attachment;filename="' . $filename . '"');
+            header('Cache-Control: max-age=0');
+
+            // Opsional: Untuk IE 9 dan lebih lama
+            // header('Cache-Control: max-age=1');
+
+            // Opsional: Jika Anda menggunakan SSL/HTTPS
+            header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
+            header('Last-Modified: ' . gmdate('D, d M Y H:i:s') . ' GMT');
+            header('Cache-Control: cache, must-revalidate');
+            header('Pragma: public');
+
+            // --- 4. Tulis Spreadsheet ke Output ---
+            // Tentukan Writer (misalnya, Xlsx)
+            $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+            $writer->save('php://output');
+        } catch (\Exception $e) {
+            $this->ErrorHandler(500, 'Error loading spreadsheet: ' . $e->getMessage());
+        }
+    }
 }
