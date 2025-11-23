@@ -2,12 +2,8 @@
   <div class="container-fluid px-4 d-flex align-items-center">
 
     <!-- LOGO KIRI -->
-    <a class="navbar-brand d-flex align-items-center fw-bold text-primary me-auto"
-       href="<?= base_url('dashboard'); ?>"
-       style="font-size: 1.25rem;">
-      <img src="<?= base_url('assets/img/hotel.png') ?>"
-           alt="Logo"
-           style="width: 32px; height: 32px; margin-right: 10px;">
+    <a class="navbar-brand d-flex align-items-center fw-bold text-primary me-auto" href="<?= base_url('dashboard'); ?>" style="font-size: 1.25rem;">
+      <img src="<?= base_url('assets/img/hotel.png') ?>" alt="Logo" style="width: 32px; height: 32px; margin-right: 10px;">
       Safeguard Hotel
     </a>
 
@@ -39,15 +35,12 @@
     </div>
 
     <!-- LOGOUT PALING KANAN -->
-    <a class="btn btn-outline-danger rounded-pill px-3 ms-auto"
-       href="<?= base_url('auth/logout'); ?>">
+    <a class="btn btn-outline-danger rounded-pill px-3 ms-auto" href="<?= base_url('auth/logout'); ?>">
       Logout
     </a>
 
     <!-- TOGGLER -->
-    <button class="navbar-toggler ms-3" type="button"
-            data-bs-toggle="collapse"
-            data-bs-target="#navbarNav">
+    <button class="navbar-toggler ms-3" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
       <span class="navbar-toggler-icon"></span>
     </button>
 
