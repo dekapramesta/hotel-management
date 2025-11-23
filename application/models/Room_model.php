@@ -1,39 +1,44 @@
 <?php
-defined('BASEPATH') OR exit('No direct script access allowed');
+defined('BASEPATH') or exit('No direct script access allowed');
 
-class Room_model extends CI_Model {
+class Room_model extends CI_Model
+{
 
     // Ambil semua lantai
-    public function get_floors() {
+    public function get_floors()
+    {
         $sql = "SELECT floor_number, description FROM floors ORDER BY floor_number ASC";
         return $this->db->query($sql)->result_array();
     }
 
-    public function get_all_rooms() {
+    public function get_all_rooms()
+    {
         return $this->db->query("SELECT room_number FROM rooms ORDER BY room_number ASC")
-                        ->result_array();
+            ->result_array();
     }
 
-    public function get_all_floors() {
+    public function get_all_floors()
+    {
         return $this->db->query("SELECT floor_number, description 
                                  FROM floors ORDER BY floor_number ASC")
-                        ->result_array();
+            ->result_array();
     }
 
 
     public function get_rooms_by_floor($floor_id)
-{
-    return $this->db->query("
+    {
+        return $this->db->query("
         SELECT room_number 
         FROM rooms 
         WHERE floor_id = ?
         ORDER BY room_number ASC
     ", [$floor_id])->result_array();
-}
+    }
 
 
     // Ambil kamar dengan filter
-    public function get_rooms($search = '', $floor_number = '', $status = '') {
+    public function get_rooms($search = '', $floor_number = '', $status = '')
+    {
         $sql = "SELECT r.room_number, r.floor_id, r.status, f.description, r.id as room_id
                 FROM rooms r
                 JOIN floors f ON r.floor_id = f.floor_number
@@ -62,12 +67,24 @@ class Room_model extends CI_Model {
     }
 
 
-     public function set_occupied($room_id)
+    public function set_occupied($room_id)
     {
         return $this->db
             ->where("id", $room_id)
             ->update("rooms", [
                 "status" => "occupied"
             ]);
+    }
+
+    public function setBooked($room_id)
+    {
+        $sql = "UPDATE ROOMS SET STATUS = 'booked' where id = '$room_id'";
+        return $this->db->query($sql);
+    }
+
+    public function getOneRoomAvail($check_out_date)
+    {
+        $sql = "select * from rooms where id not in (select room_id from bookings where check_out_date >= '$check_out_date') and status not in ('booked', 'occupied') order by id asc limit 1";
+        return $this->db->query($sql)->result_array();
     }
 }

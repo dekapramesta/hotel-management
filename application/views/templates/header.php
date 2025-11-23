@@ -1,11 +1,12 @@
-<?php 
-   if (!$this->session->userdata('logged_in')) {
-      redirect('login');
-    }
+<?php
+if (!$this->session->userdata('logged_in')) {
+  redirect('login');
+}
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <title><?= isset($title) ? $title : 'Hotel Management'; ?></title>
@@ -13,12 +14,17 @@
 
   <!-- Bootstrap 5 -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="<?= base_url(); ?>assets/css/toastr.min.css" rel="stylesheet">
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <style>
-    html, body {
+    html,
+    body {
       height: 100%;
-            background-color: white;
-
+      background-color: white;
+      font-family: 'Poppins', sans-serif;
+      color: #333;
     }
 
     body {
@@ -30,7 +36,8 @@
 
     main {
       flex: 1;
-      padding-top: 90px; /* kasih jarak dari navbar */
+      padding-top: 90px;
+      /* kasih jarak dari navbar */
       padding-bottom: 30px;
       background-color: white;
     }
@@ -40,29 +47,31 @@
       border-top: 1px solid #dee2e6;
       padding: 15px 0;
       text-align: center;
-      color: :white;
+      /* color: :white; */
       width: 100%;
     }
- .navbar-nav .nav-link {
-    font-weight: 500;
-    color: #555 !important;
-    transition: 0.2s ease;
-  }
 
-  .navbar-nav .nav-link:hover {
-    color: #006699 !important;
-  }
+    .navbar-nav .nav-link {
+      font-weight: 500;
+      color: #555 !important;
+      transition: 0.2s ease;
+    }
 
-  .navbar-nav .nav-link.active {
-    color: #006699 !important;
-    font-weight: 600;
-    border-bottom: 2px solid #006699;
-  }
+    .navbar-nav .nav-link:hover {
+      color: #006699 !important;
+    }
 
-  .navbar {
-    backdrop-filter: blur(8px);
+    .navbar-nav .nav-link.active {
+      color: #006699 !important;
+      font-weight: 600;
+      border-bottom: 2px solid #006699;
+    }
+
+    .navbar {
+      backdrop-filter: blur(8px);
     }
   </style>
   <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 </head>
+
 <body>
