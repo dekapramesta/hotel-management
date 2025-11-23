@@ -30,11 +30,42 @@ class Dashboard extends CI_Controller{
       $data['rooms'] = $this->Transaksi_model->get_rooms("","","");
       $data['title'] = 'Room Monitoring';
       $data['floors'] = $this->Transaksi_model->get_floor();
+      $data['rooms']  = $this->Room_model->get_all_rooms();
+      // $data['floors'] = $this->Room_model->get_all_floors();
       $this->load->view('templates/header', $data);
       $this->load->view('templates/navbar');
       $this->load->view('dashboard/dashboard');
       $this->load->view('templates/footer');
   }
+
+  public function get_rooms_by_floor()
+{
+    $floor_id = $this->input->post('floor_id');
+
+    $rooms = $this->Room_model->get_rooms_by_floor($floor_id);
+
+    echo json_encode([
+        'success' => true,
+        'rooms' => $rooms
+    ]);
+}
+
+public function verify_booking()
+{
+    $room_id = $this->input->post('room_id');
+    $user_id = $this->input->post('user_id');
+
+    $this->load->model('Booking_model');
+
+    $isValid = $this->Booking_model->check_active_booking($room_id, $user_id);
+
+    echo json_encode([
+        "valid" => $isValid,
+        "message" => $isValid ? "Booking valid" : "Booking tidak ditemukan"
+    ]);
+}
+
+
 
     public function filter() {
         $search = $this->input->post('search');

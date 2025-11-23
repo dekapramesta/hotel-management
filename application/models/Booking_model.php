@@ -16,21 +16,39 @@ class Booking_model extends CI_Model {
         $nik         = $data['nik'];
         $alamat      = $data['alamat'];
         $email       = $data['email'];
+        $kendaraan   = $data['kendaraan'];
+        $nomorPolisi = $data['nomor_polisi'];
+        $unitInduk   = $data['unit_induk'];
+        $jabatan     = $data['jabatan'];
+        $nipp        = $data['nipp'];
+        $kelamin     = isset($data['kelamin']) ? $data['kelamin'] : null;
 
         $this->db->trans_start();
 
         // 1. Insert tamu
-        $guestSql = "INSERT INTO guests 
-            (nama, nik, telepon, email, alamat, foto_wajah, user_face_id) 
-            VALUES 
-            (?, ?, ?, ?, ?, NULL, ?)";
+        if (!empty($userFaceId)) {
+            $selectSql = "SELECT id FROM guests WHERE user_face_id = ? LIMIT 1";
+            $query = $this->db->query($selectSql, [$userFaceId]);
+            
+            if ($query->num_rows() > 0) {
+                $guestId = $query->row()->id;
+            }
+        }
 
-        $this->db->query($guestSql, [$nama, $nik, $hp, $email, $alamat, $userFaceId]);
-        $guestId = $this->db->insert_id();
+        // Jika guestId tidak ditemukan (user_face_id null atau tidak ditemukan), lakukan insert baru
+        if (empty($guestId)) {
+            $guestSql = "INSERT INTO guests 
+                (nama, nik, telepon, email, alamat, foto_wajah, user_face_id, kendaraan, nomor_polisi, unit_induk, jabatan, nipp, kelamin) 
+                VALUES 
+                (?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?)";
 
-        if (!$guestId) {
-            $this->db->trans_rollback();
-            return ['status' => 'error', 'message' => 'Gagal menyimpan tamu'];
+            $this->db->query($guestSql, [$nama, $nik, $hp, $email, $alamat, $userFaceId, $kendaraan, $nomorPolisi, $unitInduk, $jabatan, $nipp, $kelamin]);
+            $guestId = $this->db->insert_id();
+
+            if (!$guestId) {
+                $this->db->trans_rollback();
+                return ['status' => 'error', 'message' => 'Gagal menyimpan tamu'];
+            }
         }
 
         // 2. Cari room by nomor & lantai
@@ -65,5 +83,42 @@ class Booking_model extends CI_Model {
         } else {
             return ['status' => 'success', 'message' => 'Booking berhasil disimpan'];
         }
+    }
+
+
+     public function check_active_booking($room_id, $guest_id)
+    {
+        $sql = "
+            SELECT *
+            FROM bookings b
+            WHERE b.room_id = ?
+              AND b.guest_id = ?
+              AND NOW() BETWEEN b.check_in_date AND b.check_out_date
+        ";
+
+        $query = $this->db->query($sql, [$room_id, $guest_id]);
+        return $query->num_rows() > 0;
+    }
+
+    public function getUserBooking($guest_id)
+    {
+        $sql = "
+            SELECT 
+                g.nama,
+                g.nipp,
+                g.jabatan,
+                g.unit_induk,
+                r.room_number,
+                r.floor_name,
+                b.check_in_date,
+                b.check_out_date
+            FROM bookings b
+            JOIN rooms r ON b.room_id = r.id
+            JOIN guests g ON g.id = b.guest_id
+            WHERE b.guest_id = ?
+              AND NOW() BETWEEN b.check_in_date AND b.check_out_date
+        ";
+
+        return $this->db->query($sql, [$guest_id])->result();
     }
 }
