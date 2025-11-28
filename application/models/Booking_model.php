@@ -22,18 +22,55 @@ class Booking_model extends CI_Model {
         $jabatan     = $data['jabatan'];
         $nipp        = $data['nipp'];
         $kelamin     = isset($data['kelamin']) ? $data['kelamin'] : null;
+        $jenis_pemesanan     = isset($data['jenis_pemesanan']) ? $data['jenis_pemesanan'] : null;
+        $status_kamar = null;
 
         $this->db->trans_start();
 
-        // 1. Insert tamu
-        if (!empty($userFaceId)) {
-            $selectSql = "SELECT id FROM guests WHERE user_face_id = ? LIMIT 1";
-            $query = $this->db->query($selectSql, [$userFaceId]);
-            
-            if ($query->num_rows() > 0) {
-                $guestId = $query->row()->id;
+        if($jenis_pemesanan == 'reservation_baru'){
+            ///cek apakah nipp sudah ada
+            $guestCheck = $this->db->where("nipp", $nipp)->get("guests")->row();
+            if($guestCheck){
+                return ['status' => 'error', 'message' => 'NIPP sudah terdaftar, silahkan gunakan fitur check-in'];
             }
+            $status_kamar = 'booked';
         }
+
+        if($jenis_pemesanan == 'reservation_lama'){
+            //ambil guest id dari nipp
+            $guestData = $this->db->where("nipp", $nipp)->get("guests")->row();
+            if($guestData){
+                $guestId = $guestData->id;
+            } else {
+                return ['status' => 'error', 'message' => 'Data tamu tidak ditemukan, silahkan gunakan fitur reservasi baru'];
+            }
+            
+            $status_kamar = 'booked';
+        }
+        
+        if($jenis_pemesanan == 'checkin_lama'){
+            if (!empty($userFaceId)) {
+                $selectSql = "SELECT id FROM guests WHERE user_face_id = ? and nipp = ? LIMIT 1";
+                $query = $this->db->query($selectSql, [$userFaceId, $nipp]);
+                
+                if ($query->num_rows() > 0) {
+                    $guestId = $query->row()->id;
+                }
+
+            }else{
+                return ['status' => 'error', 'message' => 'User Face ID tidak ditemukan'];
+            }
+            $status_kamar = 'occupied';
+
+        }
+
+         if($jenis_pemesanan == 'checkin_baru'){
+            $status_kamar = 'occupied';
+            $guestId = null; // reset guestId untuk pemesanan baru
+        }
+
+
+        
 
         // Jika guestId tidak ditemukan (user_face_id null atau tidak ditemukan), lakukan insert baru
         if (empty($guestId)) {
@@ -73,7 +110,7 @@ class Booking_model extends CI_Model {
         $this->db->query($bookingSql, [$guestId, $room->id, $tglCheckin, $tglCheckout]);
 
         // 4. Update status room
-        $updateRoomSql = "UPDATE rooms SET status = 'booked' WHERE id = ?";
+        $updateRoomSql = "UPDATE rooms SET status = '".$status_kamar."' WHERE id = ?";
         $this->db->query($updateRoomSql, [$room->id]);
 
         $this->db->trans_complete();

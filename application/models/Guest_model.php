@@ -10,4 +10,14 @@ class Guest_model extends CI_Model {
         $query = $this->db->query($sql, [$user_face_id]);
         return $query->row_array(); // ambil satu row
     }
+
+    public function get_guest(){
+        $query = $this->db->get("guests");
+        return $query->result_array();
+    }
+
+    public function get_guest_by_nipp($nipp){
+        $query = $this->db->where("nipp", $nipp)->get("guests");
+        return $query->row();
+    }
 }

@@ -23,6 +23,7 @@ class Booking extends CI_Controller {
             'jabatan'     => $this->input->post('jabatan'),
             'nipp'        => $this->input->post('nipp'),
             'kelamin'        => $this->input->post('kelamin'),
+            'jenis_pemesanan' => $this->input->post('flag_tamu')
         ];
 
         $this->load->model('Booking_model');

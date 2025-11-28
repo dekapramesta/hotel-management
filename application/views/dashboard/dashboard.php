@@ -474,24 +474,24 @@
           <div id="step1">
             <div class="row g-3">
 
-          <div class="col-md-6">
-  <label class="form-label fw-semibold text-muted">Lantai</label>
-  <select class="form-select" id="lantaiKamar" required>
-    <option selected disabled>Pilih Lantai</option>
-    <?php foreach ($floors as $f) { ?>
-      <option value="<?= $f['floor_number']; ?>">
-        <?= $f['description']; ?>
-      </option>
-    <?php } ?>
-  </select>
-</div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold text-muted">Lantai</label>
+                <select class="form-select" id="lantaiKamar" required>
+                  <option selected disabled>Pilih Lantai</option>
+                  <?php foreach ($floors as $f) { ?>
+                    <option value="<?= $f['floor_number']; ?>">
+                      <?= $f['description']; ?>
+                    </option>
+                  <?php } ?>
+                </select>
+              </div>
 
-<div class="col-md-6">
-  <label class="form-label fw-semibold text-muted">Nomor Kamar</label>
-  <select class="form-select" id="nomorKamar" required>
-    <option selected disabled>Pilih Nomor Kamar</option>
-  </select>
-</div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold text-muted">Nomor Kamar</label>
+                <select class="form-select" id="nomorKamar" required>
+                  <option selected disabled>Pilih Nomor Kamar</option>
+                </select>
+              </div>
 
               <div class="col-md-6">
                 <label class="form-label fw-semibold text-muted">Tanggal Check-in</label>
@@ -671,7 +671,10 @@
                   
                   <div class="col-md-6">
                     <label class="form-label fw-semibold">NIPP</label>
-                    <input type="text" class="form-control" id="nippLama">
+                    <select class="form-select" id="nippLama">
+                      <option selected disabled>Pilih NIPP</option>
+                      <!-- Options akan diisi via JavaScript -->
+                    </select>
                   </div>
                     <div class="col-md-6">
                      <label class="filter-label">Gender</label>
@@ -715,60 +718,134 @@
 
             <!-- FORM RESERVATION ONLY -->
             <div id="formReservationOnly" style="display:none;">
-              <div class="row g-3">
-                <div class="col-md-6">
-                  <label class="form-label fw-semibold">Nama Lengkap</label>
-                  <input type="text" class="form-control" id="namaReservation">
-                </div>
+              <!-- JENIS TAMU UNTUK RESERVATION ONLY -->
+              <div class="mb-3">
+                <label class="form-label fw-semibold text-muted">Jenis Tamu</label>
+                <select class="form-select" id="jenisTamuReservation">
+                  <option selected disabled>Pilih Jenis Tamu</option>
+                  <option value="baru">Tamu Baru</option>
+                  <option value="lama">Tamu Lama</option>
+                </select>
+              </div>
 
-                <div class="col-md-6">
-                  <label class="form-label fw-semibold">No HP</label>
-                  <input type="text" class="form-control" id="hpReservation">
-                </div>
+              <!-- FORM RESERVATION ONLY - TAMU BARU -->
+              <div id="formReservationBaru" style="display:none;">
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Nama Lengkap</label>
+                    <input type="text" class="form-control" id="namaReservationBaru">
+                  </div>
 
-                <div class="col-md-6">
-                  <label class="form-label fw-semibold">NIK</label>
-                  <input type="text" class="form-control" id="nikReservation">
-                </div>
-                
-                <div class="col-md-6">
-                  <label class="form-label fw-semibold">Alamat</label>
-                  <input type="text" class="form-control" id="alamatReservation">
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label fw-semibold">Kendaraan</label>
-                  <input type="text" class="form-control" id="kendaraanReservation">
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label fw-semibold">Nomor Polisi</label>
-                  <input type="text" class="form-control" id="nomorPolisiReservation">
-                </div>
-                <div class="col-md-6">
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">No HP</label>
+                    <input type="text" class="form-control" id="hpReservationBaru">
+                  </div>
+
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">NIK</label>
+                    <input type="text" class="form-control" id="nikReservationBaru">
+                  </div>
+                  
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Alamat</label>
+                    <input type="text" class="form-control" id="alamatReservationBaru">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Kendaraan</label>
+                    <input type="text" class="form-control" id="kendaraanReservationBaru">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Nomor Polisi</label>
+                    <input type="text" class="form-control" id="nomorPolisiReservationBaru">
+                  </div>
+                  <div class="col-md-6">
                     <label class="form-label fw-semibold">Jabatan</label>
-                    <input type="text" class="form-control" id="jabatanReservation">
+                    <input type="text" class="form-control" id="jabatanReservationBaru">
                   </div>
                   <div class="col-md-6">
                     <label class="form-label fw-semibold">Unit Induk</label>
-                    <input type="text" class="form-control" id="unitIndukReservation">
+                    <input type="text" class="form-control" id="unitIndukReservationBaru">
                   </div>
                   
                   <div class="col-md-6">
                     <label class="form-label fw-semibold">NIPP</label>
-                    <input type="text" class="form-control" id="nippReservation">
+                    <input type="text" class="form-control" id="nippReservationBaru">
                   </div>
                   
                   <div class="col-md-6">
-                     <label class="filter-label">Gender</label>
-                    <select class="form-select filter-select" id="kelaminReservation">
+                    <label class="filter-label">Gender</label>
+                    <select class="form-select filter-select" id="kelaminReservationBaru">
                       <option value="L">Laki-laki</option>
                       <option value="P">Wanita</option>
                     </select>
                   </div>
                   
-                
-                <div class="col-md-6">
-                  <label class="form-label fw-semibold">Email</label>
-                  <input type="text" class="form-control" id="emailReservation">
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Email</label>
+                    <input type="text" class="form-control" id="emailReservationBaru">
+                  </div>
+                </div>
+              </div>
+
+              <!-- FORM RESERVATION ONLY - TAMU LAMA -->
+              <div id="formReservationLama" style="display:none;">
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Nama Lengkap</label>
+                    <input type="text" class="form-control" id="namaReservationLama" readonly>
+                  </div>
+
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">No HP</label>
+                    <input type="text" class="form-control" id="hpReservationLama" readonly>
+                  </div>
+
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">NIK</label>
+                    <input type="text" class="form-control" id="nikReservationLama" readonly>
+                  </div>
+                  
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Alamat</label>
+                    <input type="text" class="form-control" id="alamatReservationLama" readonly>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Kendaraan</label>
+                    <input type="text" class="form-control" id="kendaraanReservationLama">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Nomor Polisi</label>
+                    <input type="text" class="form-control" id="nomorPolisiReservationLama">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Jabatan</label>
+                    <input type="text" class="form-control" id="jabatanReservationLama">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Unit Induk</label>
+                    <input type="text" class="form-control" id="unitIndukReservationLama">
+                  </div>
+                  
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">NIPP</label>
+                    <select class="form-select" id="nippReservationLama">
+                      <option selected disabled>Pilih NIPP</option>
+                      <!-- Options akan diisi via JavaScript -->
+                    </select>
+                  </div>
+                  
+                  <div class="col-md-6">
+                    <label class="filter-label">Gender</label>
+                    <select class="form-select filter-select" id="kelaminReservationLama">
+                      <option value="L">Laki-laki</option>
+                      <option value="P">Wanita</option>
+                    </select>
+                  </div>
+                  
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Email</label>
+                    <input type="text" class="form-control" id="emailReservationLama" readonly>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1100,87 +1177,63 @@ function stopCameraLama() {
     }
 
     // --- VALIDASI STEP 2 BERDASARKAN JENIS BOOKING ---
-    function validateStep2() {
-        let valid = true;
-        const jenisBooking = $("#jenisBooking").val();
+   function validateStep2() {
+    let valid = true;
+    const jenisBooking = $("#jenisBooking").val();
 
-        if (!jenisBooking) {
+    if (!jenisBooking) {
+        valid = false;
+        $("#jenisBooking").addClass("is-invalid");
+    } else {
+        $("#jenisBooking").removeClass("is-invalid");
+    }
+
+    if (jenisBooking === "reservation_checkin") {
+        const jenisTamu = $("#jenisTamu").val();
+        if (!jenisTamu) {
             valid = false;
-            $("#jenisBooking").addClass("is-invalid");
+            $("#jenisTamu").addClass("is-invalid");
         } else {
-            $("#jenisBooking").removeClass("is-invalid");
+            $("#jenisTamu").removeClass("is-invalid");
         }
 
-        if (jenisBooking === "reservation_checkin") {
-            const jenisTamu = $("#jenisTamu").val();
-            if (!jenisTamu) {
-                valid = false;
-                $("#jenisTamu").addClass("is-invalid");
-            } else {
-                $("#jenisTamu").removeClass("is-invalid");
-            }
-
-            if (jenisTamu === "baru") {
-                const fields = [
-                    "#user_face_id_baru",
-                    "#namaBaru",
-                    "#hpBaru",
-                    "#nikBaru",
-                    "#alamatBaru",
-                    "#emailBaru",
-                    "#kendaraanBaru",
-                    "#nomorPolisiBaru",
-                    "#unitIndukBaru",
-                    "#jabatanBaru",
-                    "#nippBaru",
-                    "#kelaminBaru"
-
-                ];
-                fields.forEach(function(selector) {
-                    if (!$(selector).val()) {
-                        valid = false;
-                        $(selector).addClass("is-invalid");
-                    } else {
-                        $(selector).removeClass("is-invalid");
-                    }
-                });
-            } else if (jenisTamu === "lama") {
-                const fields = [
-                    "#user_face_id",
-                    "#nama_lama",
-                    "#hp_lama",
-                    "#nik_lama",
-                    "#alamat",
-                    "#email",
-                    "#kendaraanLama",
-                    "#nomorPolisi",
-                    "#unitIndukLama",
-                    "#jabatanLama", 
-                    "#nippLama",
-                    "#kelaminLama"
-                ];
-                fields.forEach(function(selector) {
-                    if (!$(selector).val()) {
-                        valid = false;
-                        $(selector).addClass("is-invalid");
-                    } else {
-                        $(selector).removeClass("is-invalid");
-                    }
-                });
-            }
-        } else if (jenisBooking === "reservation_only") {
+        if (jenisTamu === "baru") {
             const fields = [
-                "#namaReservation",
-                "#hpReservation",
-                "#nikReservation",
-                "#alamatReservation",
-                "#emailReservation",
-                "#kendaraanReservation",
-                "#nomorPolisiReservation",
-                "#unitIndukReservation",
-                "#jabatanReservation",
-                "#nippReservation",
-                "#kelaminReservation"
+                "#user_face_id_baru",
+                "#namaBaru",
+                "#hpBaru",
+                "#nikBaru",
+                "#alamatBaru",
+                "#emailBaru",
+                // "#kendaraanBaru", // TIDAK WAJIB
+                // "#nomorPolisiBaru", // TIDAK WAJIB
+                "#unitIndukBaru",
+                "#jabatanBaru",
+                "#nippBaru",
+                "#kelaminBaru"
+            ];
+            fields.forEach(function(selector) {
+                if (!$(selector).val()) {
+                    valid = false;
+                    $(selector).addClass("is-invalid");
+                } else {
+                    $(selector).removeClass("is-invalid");
+                }
+            });
+        } else if (jenisTamu === "lama") {
+            const fields = [
+                "#user_face_id",
+                "#nama_lama",
+                "#hp_lama",
+                "#nik_lama",
+                "#alamat",
+                "#email",
+                // "#kendaraanLama", // TIDAK WAJIB
+                // "#nomorPolisi", // TIDAK WAJIB
+                "#unitIndukLama",
+                "#jabatanLama", 
+                "#nippLama",
+                "#kelaminLama"
             ];
             fields.forEach(function(selector) {
                 if (!$(selector).val()) {
@@ -1191,9 +1244,64 @@ function stopCameraLama() {
                 }
             });
         }
+    } else if (jenisBooking === "reservation_only") {
+        const jenisTamuReservation = $("#jenisTamuReservation").val();
+        if (!jenisTamuReservation) {
+            valid = false;
+            $("#jenisTamuReservation").addClass("is-invalid");
+        } else {
+            $("#jenisTamuReservation").removeClass("is-invalid");
+        }
 
-        return valid;
+        if (jenisTamuReservation === "baru") {
+            const fields = [
+                "#namaReservationBaru",
+                "#hpReservationBaru",
+                "#nikReservationBaru",
+                "#alamatReservationBaru",
+                "#emailReservationBaru",
+                // "#kendaraanReservationBaru", // TIDAK WAJIB
+                // "#nomorPolisiReservationBaru", // TIDAK WAJIB
+                "#unitIndukReservationBaru",
+                "#jabatanReservationBaru",
+                "#nippReservationBaru",
+                "#kelaminReservationBaru"
+            ];
+            fields.forEach(function(selector) {
+                if (!$(selector).val()) {
+                    valid = false;
+                    $(selector).addClass("is-invalid");
+                } else {
+                    $(selector).removeClass("is-invalid");
+                }
+            });
+        } else if (jenisTamuReservation === "lama") {
+            const fields = [
+                "#namaReservationLama",
+                "#hpReservationLama",
+                "#nikReservationLama",
+                "#alamatReservationLama",
+                "#emailReservationLama",
+                // "#kendaraanReservationLama", // TIDAK WAJIB
+                // "#nomorPolisiReservationLama", // TIDAK WAJIB
+                "#unitIndukReservationLama",
+                "#jabatanReservationLama",
+                "#nippReservationLama",
+                "#kelaminReservationLama"
+            ];
+            fields.forEach(function(selector) {
+                if (!$(selector).val()) {
+                    valid = false;
+                    $(selector).addClass("is-invalid");
+                } else {
+                    $(selector).removeClass("is-invalid");
+                }
+            });
+        }
     }
+
+    return valid;
+}
 
     // --- STEP 1 NEXT BUTTON ---
     $("#nextBtn").click(function () {
@@ -1244,12 +1352,16 @@ function stopCameraLama() {
         $("#formReservationOnly").hide();
         $("#formTamuBaru").hide();
         $("#formTamuLama").hide();
+        
         $("#jenisTamu").val("").trigger("change");
 
         if (jenis === "reservation_checkin") {
             $("#jenisTamuSection").show();
         } else if (jenis === "reservation_only") {
             $("#formReservationOnly").show();
+             $('#jenisTamuReservation').val('');
+            $('#formReservationBaru').hide();
+            $('#formReservationLama').hide();
         }
 
         // cek validasi
@@ -1260,6 +1372,161 @@ function stopCameraLama() {
         }
     });
 
+    
+
+    $('#jenisTamuReservation').on('change', function() {
+      const jenisTamu = $(this).val();
+      
+      // Sembunyikan semua form reservation
+      $('#formReservationBaru').hide();
+      $('#formReservationLama').hide();
+      
+      // Tampilkan form sesuai pilihan
+      if (jenisTamu === 'baru') {
+        $('#formReservationBaru').show();
+      } else if (jenisTamu === 'lama') {
+        $('#formReservationLama').show();
+        // Load data NIPP untuk tamu lama
+        loadNippOptions('nippReservationLama');
+      }
+    });
+
+ // Fungsi untuk load NIPP options dari database
+function loadNippOptions(selectId) {
+  const $selectElement = $('#' + selectId);
+  // Clear existing options
+  $selectElement.html('<option selected disabled>Pilih NIPP</option>');
+  
+  // AJAX call untuk mengambil data tamu dari database
+  $.ajax({
+    url: '<?=base_url('dashboard/get_all_guest') ?>/ ', // Ganti dengan endpoint Anda
+    type: 'GET',
+    dataType: 'json',
+    success: function(response) {
+      if (response.status) {
+        // Add options dari database
+        $.each(response.data, function(index, item) {
+          $selectElement.append(
+            $('<option></option>')
+              .val(item.nipp)
+              .text(item.nipp + ' - ' + item.nama)
+          );
+        });
+      } else {
+        console.error('Gagal mengambil data tamu');
+      }
+    },
+    error: function(xhr, status, error) {
+      console.error('Error:', error);
+      // Fallback ke data dummy jika AJAX gagal
+      // const fallbackData = [
+      //   { nipp: 'NIPP2024001', nama: 'Budi Santoso' },
+      //   { nipp: 'NIPP2024002', nama: 'Sari Dewi' },
+      //   { nipp: 'NIPP2024003', nama: 'Ahmad Rizki' },
+      //   { nipp: 'NIPP2024004', nama: 'Maya Sari' },
+      //   { nipp: 'NIPP2024005', nama: 'Rudi Hermawan' }
+      // ];
+      
+      // $.each(fallbackData, function(index, item) {
+      //   $selectElement.append(
+      //     $('<option></option>')
+      //       .val(item.nipp)
+      //       .text(item.nipp + ' - ' + item.nama)
+      //   );
+      // });
+    }
+  });
+}
+
+$('#nippReservationLama').on('change', function() {
+    const selectedNipp = $(this).val();
+    console.log('data yg dipilih', selectedNipp);
+    
+    if (selectedNipp) {
+        // Tampilkan loading state
+        $('#formReservationLama').append('<div id="loadingReservation" class="text-center mt-2"><i class="bi bi-arrow-repeat spinner"></i> Memuat data tamu...</div>');
+        
+        $.ajax({
+            url: '<?= base_url("dashboard/get_guest/") ?>' + selectedNipp,
+            type: 'GET',
+            dataType: 'json',
+            success: function(response) {
+                // Hapus loading state
+                $('#loadingReservation').remove();
+                
+                if (response.status === 'success') {
+                    console.log('Data tamu:', response.data);
+                    fillReservationLamaForm(response.data);
+                } else {
+                    console.error('Error:', response.message);
+                    alert('Data tamu tidak ditemukan untuk NIPP: ' + selectedNipp);
+                    clearReservationLamaForm();
+                }
+            },
+            error: function(xhr, status, error) {
+                // Hapus loading state
+                $('#loadingReservation').remove();
+                
+                console.error('AJAX Error:', error);
+                alert('Terjadi kesalahan saat memuat data tamu');
+                clearReservationLamaForm();
+            }
+        });
+    } else {
+        clearReservationLamaForm();
+    }
+});
+
+// Fungsi untuk mengisi form Reservation Lama
+function fillReservationLamaForm(guestData) {
+    $('#namaReservationLama').val(guestData.nama || '');
+    $('#nikReservationLama').val(guestData.nik || '');
+    $('#hpReservationLama').val(guestData.telepon || '');
+    $('#alamatReservationLama').val(guestData.alamat || '');
+    $('#emailReservationLama').val(guestData.email || '');
+    $('#kendaraanReservationLama').val(guestData.kendaraan || '');
+    $('#nomorPolisiReservationLama').val(guestData.nomor_polisi || '');
+    $('#jabatanReservationLama').val(guestData.jabatan || '');
+    $('#unitIndukReservationLama').val(guestData.unit_induk || '');
+    $('#kelaminReservationLama').val(guestData.kelamin || 'L');
+    
+    // Tampilkan pesan sukses
+    showReservationSuccessMessage('Data tamu berhasil dimuat');
+    if (validateStep2()) {
+        $("#finishBtn").prop("disabled", false);
+    } else {
+        $("#finishBtn").prop("disabled", true);
+    }
+    
+}
+
+// Fungsi untuk menampilkan pesan sukses
+function showReservationSuccessMessage(message) {
+    // Hapus pesan sebelumnya jika ada
+    $('#reservationSuccessMessage').remove();
+    
+    const successMessage = `
+        <div id="reservationSuccessMessage" class="alert alert-success alert-dismissible fade show mt-2" role="alert">
+            <i class="bi bi-check-circle-fill"></i> ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    $('#formReservationLama').prepend(successMessage);
+}
+
+// Fungsi untuk mengosongkan form Reservation Lama
+function clearReservationLamaForm() {
+    $('#namaReservationLama').val('');
+    $('#nikReservationLama').val('');
+    $('#hpReservationLama').val('');
+    $('#alamatReservationLama').val('');
+    $('#emailReservationLama').val('');
+    $('#kendaraanReservationLama').val('');
+    $('#nomorPolisiReservationLama').val('');
+    $('#jabatanReservationLama').val('');
+    $('#unitIndukReservationLama').val('');
+    $('#kelaminReservationLama').val('L');
+}
     // --- JENIS TAMU CHANGE ---
     $("#jenisTamu").change(function () {
         const jenis = $(this).val();
@@ -1291,97 +1558,118 @@ function stopCameraLama() {
     });
 
     // --- FINISH BUTTON CLICK ---
-    $("#finishBtn").click(function() {
-        if (!validateStep2()) {
-            alert("⚠ Harap isi semua data tamu sebelum simpan!");
-            return;
-        }
+  $("#finishBtn").click(function() {
+    if (!validateStep2()) {
+        alert("⚠ Harap isi semua data tamu sebelum simpan!");
+        return;
+    }
 
-        // Kirim data AJAX
-        const data = {
-            nomorKamar: $("#nomorKamar").val(),
-            lantaiKamar: $("#lantaiKamar").val(),
-            tglCheckin: $("#tglCheckin").val(),
-            tglCheckout: $("#tglCheckout").val(),
-            jenisBooking: $("#jenisBooking").val(),
-        };
+    // Kirim data AJAX
+    const data = {
+        nomorKamar: $("#nomorKamar").val(),
+        lantaiKamar: $("#lantaiKamar").val(),
+        tglCheckin: $("#tglCheckin").val(),
+        tglCheckout: $("#tglCheckout").val(),
+        jenisBooking: $("#jenisBooking").val(),
+    };
 
-        const jenisBooking = $("#jenisBooking").val();
+    const jenisBooking = $("#jenisBooking").val();
+    
+    if (jenisBooking === "reservation_checkin") {
+        data.jenisTamu = $("#jenisTamu").val();
+        data.flag_tamu = "checkin_" + $("#jenisTamu").val(); // checkin_baru atau checkin_lama
         
-        if (jenisBooking === "reservation_checkin") {
-            data.jenisTamu = $("#jenisTamu").val();
-            
-            if ($("#jenisTamu").val() === "baru") {
-                data.user_face_id = $("#user_face_id_baru").val();
-                data.nama = $("#namaBaru").val();
-                data.hp = $("#hpBaru").val();
-                data.nik = $("#nikBaru").val();
-                data.alamat = $("#alamatBaru").val();
-                data.email = $("#emailBaru").val();
-                data.kendaraan = $("#kendaraanBaru").val();
-                data.nomor_polisi = $("#nomorPolisiBaru").val();
-                data.unit_induk = $("#unitIndukBaru").val();
-                data.jabatan = $("#jabatanBaru").val();
-                data.nipp = $("#nippBaru").val();
-                data.kelamin = $("#kelaminBaru").val();
-            } else {
-                data.user_face_id = $("#user_face_id").val();
-                data.nama = $("#nama_lama").val();
-                data.hp = $("#hp_lama").val();
-                data.nik = $("#nik_lama").val();
-                data.alamat = $("#alamat").val();
-                data.email = $("#email").val();
-                data.kendaraan = $("#kendaraanLama").val();
-                data.nomor_polisi = $("#nomorPolisi").val();
-                data.unit_induk = $("#unitIndukLama").val();
-                data.jabatan = $("#jabatanLama").val();
-                data.kelamin = $("#kelaminLama").val();
-                data.nipp = $("#nippLama").val();
-            }
-        } else if (jenisBooking === "reservation_only") {
-            data.nama = $("#namaReservation").val();
-            data.hp = $("#hpReservation").val();
-            data.nik = $("#nikReservation").val();
-            data.alamat = $("#alamatReservation").val();
-            data.email = $("#emailReservation").val();
-            data.kendaraan = $("#kendaraanReservation").val();
-            data.nomor_polisi = $("#nomorPolisiReservation").val();
-            data.unit_induk = $("#unitIndukReservation").val();
-            data.jabatan = $("#jabatanReservation").val();
-            data.kelamin = $("#kelaminReservation").val();
-            data.nipp = $("#nippReservation").val();
+        if ($("#jenisTamu").val() === "baru") {
+            data.user_face_id = $("#user_face_id_baru").val();
+            data.nama = $("#namaBaru").val();
+            data.hp = $("#hpBaru").val();
+            data.nik = $("#nikBaru").val();
+            data.alamat = $("#alamatBaru").val();
+            data.email = $("#emailBaru").val();
+            data.kendaraan = $("#kendaraanBaru").val();
+            data.nomor_polisi = $("#nomorPolisiBaru").val();
+            data.unit_induk = $("#unitIndukBaru").val();
+            data.jabatan = $("#jabatanBaru").val();
+            data.nipp = $("#nippBaru").val();
+            data.kelamin = $("#kelaminBaru").val();
+        } else {
+            data.user_face_id = $("#user_face_id").val();
+            data.nama = $("#nama_lama").val();
+            data.hp = $("#hp_lama").val();
+            data.nik = $("#nik_lama").val();
+            data.alamat = $("#alamat").val();
+            data.email = $("#email").val();
+            data.kendaraan = $("#kendaraanLama").val();
+            data.nomor_polisi = $("#nomorPolisi").val();
+            data.unit_induk = $("#unitIndukLama").val();
+            data.jabatan = $("#jabatanLama").val();
+            data.kelamin = $("#kelaminLama").val();
+            data.nipp = $("#nippLama").val();
         }
+    } else if (jenisBooking === "reservation_only") {
+        const jenisTamuReservation = $("#jenisTamuReservation").val();
+        data.jenisTamu = jenisTamuReservation;
+        data.flag_tamu = "reservation_" + jenisTamuReservation; // reservation_baru atau reservation_lama
+        
+        if (jenisTamuReservation === "baru") {
+            data.nama = $("#namaReservationBaru").val();
+            data.hp = $("#hpReservationBaru").val();
+            data.nik = $("#nikReservationBaru").val();
+            data.alamat = $("#alamatReservationBaru").val();
+            data.email = $("#emailReservationBaru").val();
+            data.kendaraan = $("#kendaraanReservationBaru").val();
+            data.nomor_polisi = $("#nomorPolisiReservationBaru").val();
+            data.unit_induk = $("#unitIndukReservationBaru").val();
+            data.jabatan = $("#jabatanReservationBaru").val();
+            data.kelamin = $("#kelaminReservationBaru").val();
+            data.nipp = $("#nippReservationBaru").val();
+        } else {
+            data.nama = $("#namaReservationLama").val();
+            data.hp = $("#hpReservationLama").val();
+            data.nik = $("#nikReservationLama").val();
+            data.alamat = $("#alamatReservationLama").val();
+            data.email = $("#emailReservationLama").val();
+            data.kendaraan = $("#kendaraanReservationLama").val();
+            data.nomor_polisi = $("#nomorPolisiReservationLama").val();
+            data.unit_induk = $("#unitIndukReservationLama").val();
+            data.jabatan = $("#jabatanReservationLama").val();
+            data.kelamin = $("#kelaminReservationLama").val();
+            data.nipp = $("#nippReservationLama").val();
+        }
+    }
 
-        $.ajax({
-            url: "<?= base_url('booking/simpan'); ?>",
-            type: "POST",
-            dataType: "json",
-            data: data,
-            beforeSend: function() {
-                $("#finishBtn").prop("disabled", true).text("Menyimpan...");
-            },
-            success: function(response) {
-                if (response.status === "success") {
-                    alert("✅ Booking berhasil disimpan!");
-                    $("#wizardForm")[0].reset();
-                    $("#bookingWizardModal").modal("hide");
-                    $("#finishBtn").prop("disabled", true);
-                    window.location.reload();
-                } else {
-                    alert("❌ Gagal menyimpan booking: " + response.message);
-                    $("#finishBtn").prop("disabled", false).text("Simpan Booking");
-                }
-            },
-            error: function(xhr) {
-                console.error(xhr.responseText);
-                alert("❌ Terjadi kesalahan sistem. Coba lagi nanti.");
+    console.log("Data yang dikirim:", data);
+    
+    $.ajax({
+        url: "<?= base_url('booking/simpan'); ?>",
+        type: "POST",
+        dataType: "json",
+        data: data,
+        beforeSend: function() {
+            $("#finishBtn").prop("disabled", true).text("Menyimpan...");
+        },
+        success: function(response) {
+            if (response.status === "success") {
+                alert("✅ Booking berhasil disimpan!");
+                $("#wizardForm")[0].reset();
+                $("#bookingWizardModal").modal("hide");
+                $("#finishBtn").prop("disabled", true);
+                window.location.reload();
+            } else {
+                alert("❌ Gagal menyimpan booking: " + response.message);
                 $("#finishBtn").prop("disabled", false).text("Simpan Booking");
-            },
-            complete: function() {
-                $("#finishBtn").text("Simpan Booking");
             }
-        });
+        },
+        error: function(xhr) {
+            console.error(xhr.responseText);
+            alert("❌ Terjadi kesalahan sistem. Coba lagi nanti.");
+            $("#finishBtn").prop("disabled", false).text("Simpan Booking");
+        },
+        complete: function() {
+            $("#finishBtn").text("Simpan Booking");
+        }
     });
+});
 
     // --- INISIALISASI ---
     updateProgress();

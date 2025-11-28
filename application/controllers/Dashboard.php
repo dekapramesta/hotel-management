@@ -123,4 +123,39 @@ public function verify_booking()
     ]);
   }
 
+  public function get_guest($nipp){
+
+    $this->load->model('Guest_model');
+    $guest = $this->Guest_model->get_guest_by_nipp($nipp);
+
+    if ($guest) {
+        echo json_encode([
+            'status' => 'success',
+            'data' => $guest
+        ]);
+    } else {
+        echo json_encode([
+            'status' => 'error',
+            'message' => 'Tamu tidak ditemukan'
+        ]);
+    }
+  }
+  public function get_all_guest(){
+
+    $this->load->model('Guest_model');
+    $guest = $this->Guest_model->get_guest();
+
+    if ($guest) {
+        echo json_encode([
+            'status' => 'success',
+            'data' => $guest
+        ]);
+    } else {
+        echo json_encode([
+            'status' => 'error',
+            'message' => 'Tamu tidak ditemukan'
+        ]);
+    }
+  }
+
 }
