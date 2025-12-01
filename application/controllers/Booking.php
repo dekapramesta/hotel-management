@@ -32,6 +32,21 @@ class Booking extends CI_Controller {
         echo json_encode($result);
     }
 
+     public function search_bookings() {
+        $search = $this->input->get('search', TRUE);
+        
+        $this->load->model('booking_model');
+        $results = $this->booking_model->search_bookings($search);
+        
+        $data = [
+            'status' => 'success',
+            'count' => count($results),
+            'data' => $results
+        ];
+        
+        echo json_encode($data);
+    }
+
     public function check_active_booking($room_id, $guest_id)
     {
         return $this->db

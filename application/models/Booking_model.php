@@ -158,4 +158,40 @@ class Booking_model extends CI_Model {
 
         return $this->db->query($sql, [$guest_id])->result();
     }
+
+      public function search_bookings($search_term) {
+        $this->db->select('
+            b.id as booking_id, 
+            b.room_id,          
+            b.nipp,
+            g.telepon,
+            g.jabatan,
+            g.unit_induk,
+            r.room_number,
+            r.floor_name,
+            b.room_type,
+            g.nama,
+            b.check_in_date , b.check_out_date
+        ');
+        
+        $this->db->from('bookings b');
+        $this->db->join('guests g', 'g.nipp = b.nipp', 'inner');
+        $this->db->join('rooms r', 'r.id = b.room_id AND b.room_type = "ROOM"', 'left');
+        
+        if(!empty($search_term)) {
+            $search_lower = strtolower($search_term);
+            $this->db->group_start();
+            $this->db->like('LOWER(g.nipp)', $search_lower);
+            $this->db->or_like('LOWER(g.nama)', $search_lower);
+            $this->db->or_like('LOWER(g.nik)', $search_lower);
+            $this->db->or_like('LOWER(g.telepon)', $search_lower);
+            $this->db->group_end();
+        }
+        
+        $this->db->order_by('b.created_at', 'DESC');
+        $this->db->limit(50); // Batasi hasil
+        
+        $query = $this->db->get();
+        return $query->result_array();
+    }
 }

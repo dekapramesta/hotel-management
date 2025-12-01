@@ -200,6 +200,28 @@
       border-radius: 6px;
       border: 2px solid #0d6efd;
   }
+
+  /* Tambahkan di bagian style */
+.btn-outline-toska {
+    color: #1E88E5;
+    border: 2px solid #1E88E5;
+    background: transparent;
+}
+.btn-outline-toska:hover {
+    background-color: #1E88E5;
+    color: white;
+}
+
+.table th {
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.table td {
+    vertical-align: middle;
+}
   </style>
 </head>
 <body>
@@ -251,11 +273,19 @@
   </div>
 
   <!-- Tombol Booking -->
+  <!-- File: application/views/dashboard/index.php (bagian header) -->
   <div class="d-flex justify-content-between align-items-center mb-3">
       <h5 class="fw-semibold mb-0 text-muted">Daftar Kamar</h5>
-      <button class="btn btn-toska shadow-sm" data-bs-toggle="modal" data-bs-target="#bookingWizardModal">
-        <i class="bi bi-calendar-plus"></i> Booking Baru
-      </button>
+      <div>
+          <!-- TOMBOL BARU: Cari Tamu -->
+          <button class="btn btn-outline-toska me-2 shadow-sm" onclick="openBookingSearch()">
+            <i class="bi bi-calendar-search"></i> Cari Booking
+        </button>
+          <!-- Tombol Booking Baru (sudah ada) -->
+          <button class="btn btn-toska shadow-sm" data-bs-toggle="modal" data-bs-target="#bookingWizardModal">
+              <i class="bi bi-calendar-plus"></i> Booking Baru
+          </button>
+      </div>
   </div>
 
   <!-- CONTAINER TOMBOL KAMAR -->
@@ -867,6 +897,71 @@
   </div>
 </div>
 
+<!-- Modal Pencarian Booking -->
+<div class="modal fade" id="bookingSearchModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+            
+            <div class="modal-header bg-toska text-white">
+                <h5 class="modal-title fw-bold">
+                    <i class="bi bi-calendar-search me-2"></i>Pencarian Booking
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            
+            <div class="modal-body">
+                
+                <!-- Search Bar -->
+                <div class="row mb-4">
+                    <div class="col-md-10">
+                        <div class="input-group">
+                            <span class="input-group-text bg-light">
+                                <i class="bi bi-search text-toska"></i>
+                            </span>
+                            <input type="text" 
+                                   class="form-control form-control-lg" 
+                                   id="bookingSearchInput"
+                                   placeholder="Masukkan NIPP, Nama, NIK, atau No. Telepon..."
+                                   autocomplete="off">
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <button class="btn btn-toska w-100 h-100" id="searchBookingBtn">
+                            <i class="bi bi-search me-1"></i>Cari
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Results Container -->
+                <div id="bookingResultsContainer">
+                    <div class="text-center py-5 text-muted">
+                        <i class="bi bi-calendar-event display-4"></i>
+                        <h5 class="mt-3">Cari Booking</h5>
+                        <p>Masukkan NIPP, Nama, NIK, atau No. Telepon</p>
+                    </div>
+                </div>
+                
+                <!-- Info Text -->
+                <div class="alert alert-info mt-4">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <small>
+                        Pencarian berdasarkan data tamu: NIPP, Nama, NIK, atau No. Telepon.
+                        Data akan menampilkan booking yang terkait.
+                    </small>
+                </div>
+                
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i>Tutup
+                </button>
+            </div>
+            
+        </div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.18.0/dist/tf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
@@ -874,6 +969,257 @@
 <script>
 $(document).ready(function() {
 
+
+
+
+   // =============================================
+    // BOOKING SEARCH FUNCTIONS
+    // =============================================
+    
+    // Event listener untuk tombol cari booking
+    $('#searchBookingBtn').click(function() {
+        performBookingSearch();
+    });
+
+    // Event listener untuk Enter key
+    $('#bookingSearchInput').keypress(function(e) {
+        if(e.which === 13) { // Enter key
+            e.preventDefault();
+            performBookingSearch();
+        }
+    });
+
+    // Event saat modal booking search terbuka
+    $('#bookingSearchModal').on('shown.bs.modal', function() {
+        setTimeout(() => {
+            $('#bookingSearchInput').focus();
+        }, 300);
+    });
+
+    // Event saat modal booking search ditutup
+    $('#bookingSearchModal').on('hidden.bs.modal', function() {
+        resetBookingSearch();
+    });
+
+    // =============================================
+    // BOOKING SEARCH IMPLEMENTATION
+    // =============================================
+    
+    // Fungsi untuk membuka modal pencarian booking
+    window.openBookingSearch = function() {
+        $('#bookingSearchModal').modal('show');
+        resetBookingSearch();
+    };
+
+    // Reset pencarian booking
+    function resetBookingSearch() {
+        $('#bookingSearchInput').val('');
+        $('#bookingResultsContainer').html(`
+            <div class="text-center py-5 text-muted">
+                <i class="bi bi-calendar-event display-4"></i>
+                <h5 class="mt-3">Cari Booking</h5>
+                <p>Masukkan NIPP, Nama, NIK, atau No. Telepon</p>
+            </div>
+        `);
+        $('#searchBookingBtn').prop('disabled', false).html('<i class="bi bi-search me-1"></i>Cari');
+    }
+
+    // Fungsi pencarian booking
+    function performBookingSearch() {
+        const searchTerm = $('#bookingSearchInput').val().trim();
+        
+        if(searchTerm.length < 2) {
+            showAlert('warning', 'Masukkan minimal 2 karakter untuk pencarian');
+            $('#bookingSearchInput').focus();
+            return;
+        }
+        
+        // Tampilkan loading
+        $('#bookingResultsContainer').html(`
+            <div class="text-center py-4">
+                <div class="spinner-border text-toska" style="width: 3rem; height: 3rem;" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2 text-muted">Mencari booking dengan kata kunci: <strong>"${searchTerm}"</strong></p>
+            </div>
+        `);
+        
+        $.ajax({
+            url: '<?= base_url("booking/search_bookings"); ?>',
+            method: 'GET',
+            data: { 
+                search: searchTerm
+            },
+            dataType: 'json',
+            beforeSend: function() {
+                $('#searchBookingBtn').prop('disabled', true).html('<i class="bi bi-hourglass-split me-1"></i>Mencari...');
+            },
+            success: function(response) {
+                $('#searchBookingBtn').prop('disabled', false).html('<i class="bi bi-search me-1"></i>Cari');
+                
+                if(response.status === 'success' && response.data.length > 0) {
+                    displayBookingResults(response.data);
+                } else {
+                    $('#bookingResultsContainer').html(`
+                        <div class="text-center py-5">
+                            <i class="bi bi-calendar-x display-4 text-muted"></i>
+                            <h5 class="mt-3">Tidak ada booking ditemukan</h5>
+                            <p class="text-muted">Kata kunci: <strong>"${searchTerm}"</strong></p>
+                        </div>
+                    `);
+                }
+            },
+            error: function() {
+                $('#searchBookingBtn').prop('disabled', false).html('<i class="bi bi-search me-1"></i>Cari');
+                $('#bookingResultsContainer').html(`
+                    <div class="text-center py-5">
+                        <i class="bi bi-exclamation-triangle display-4 text-danger"></i>
+                        <h5 class="mt-3 text-danger">Terjadi kesalahan</h5>
+                        <p class="text-muted">Gagal memuat data booking</p>
+                    </div>
+                `);
+            }
+        });
+    }
+
+    // Tampilkan hasil pencarian booking
+function displayBookingResults(bookings) {
+    let html = `
+        <div class="card shadow-sm">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold">
+                    <i class="bi bi-list-check me-1 text-primary"></i>
+                    Hasil Pencarian (${bookings.length} booking ditemukan)
+                </h6>
+                <span class="badge bg-toska">${$('#bookingSearchInput').val()}</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>NIPP</th>
+                                <th>NAMA</th>
+                                <th>No. Telepon</th>
+                                <th>Jabatan</th>
+                                <th>Unit Induk</th>
+                                <th>Kamar</th>
+                                <th>Lantai</th>
+                                <th>Check-in</th>
+                                <th>Check-out</th>
+                                <th>Tipe</th>
+                                <th class="text-center">Check-in</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+    `;
+    
+    bookings.forEach(function(booking) {
+        // Format tanggal
+        const checkinDate = booking.checkin_date ? 
+            new Date(booking.checkin_date).toLocaleDateString('id-ID') : '-';
+        const checkoutDate = booking.checkout_date ? 
+            new Date(booking.checkout_date).toLocaleDateString('id-ID') : '-';
+        
+        html += `
+            <tr>
+                <td>
+                    <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25">
+                        ${booking.nipp || '-'}
+                    </span>
+                </td>
+                <td><strong>${booking.nama || '-'}</strong></td>
+                <td>${booking.telepon || '-'}</td>
+                <td>${booking.jabatan || '-'}</td>
+                <td>${booking.unit_induk || '-'}</td>
+                <td>
+                    <span class="badge bg-primary">${booking.room_number || '-'}</span>
+                </td>
+                <td>${booking.floor_name || '-'}</td>
+                <td>${checkinDate}</td>
+                <td>${checkoutDate}</td>
+                <td>
+                    <span class="badge ${booking.room_type === 'ROOM' ? 'bg-success' : 'bg-warning'}">
+                        ${booking.room_type || '-'}
+                    </span>
+                </td>
+                <td class="text-center">
+                    <button class="btn btn-sm btn-toska" 
+                            onclick="openCheckinModal('${booking.booking_id}', '${booking.room_id || ''}')"
+                            title="Lakukan Check-in untuk booking ini">
+                        <i class="bi bi-box-arrow-in-right me-1"></i> Check In
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
+    
+    html += `
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer bg-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <small class="text-muted">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Menampilkan ${bookings.length} booking yang bisa check-in
+                    </small>
+                    <button class="btn btn-sm btn-outline-toska" onclick="resetBookingSearch()">
+                        <i class="bi bi-arrow-clockwise me-1"></i> Reset
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    $('#bookingResultsContainer').html(html);
+}
+
+// Fungsi untuk membuka modal check-in dari hasil pencarian
+window.openCheckinModal = function(bookingId, roomId) {
+    console.log('Membuka check-in untuk booking:', bookingId, 'room:', roomId);
+    
+    // Tutup modal pencarian booking
+    $('#bookingSearchModal').modal('hide');
+    
+    // Buka modal room check-in
+    if (roomId) {
+        loadDataRoom(roomId, bookingId);
+    } else {
+        // Jika tidak ada roomId, tampilkan alert
+        alert('Kamar tidak ditemukan untuk booking ini');
+        resetBookingSearch();
+    }
+}
+    // Helper function untuk menampilkan alert
+    function showAlert(type, message) {
+        // Hapus alert sebelumnya jika ada
+        $('.alert-dismissible').remove();
+        
+        const alertHtml = `
+            <div class="alert alert-${type} alert-dismissible fade show position-fixed top-0 end-0 m-3" style="z-index: 9999;" role="alert">
+                <i class="bi ${type === 'danger' ? 'bi-exclamation-triangle' : 'bi-exclamation-circle'} me-2"></i>
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+        
+        $('body').append(alertHtml);
+        
+        // Auto hide setelah 3 detik
+        setTimeout(() => {
+            $('.alert-dismissible').alert('close');
+        }, 3000);
+    }
+
+    // =============================================
+    // INTEGRASI DENGAN FUNGSI LAIN YANG SUDAH ADA
+    // =============================================
+    
+    // Pastikan fungsi ini bisa diakses dari luar untuk tombol
+    window.resetBookingSearch = resetBookingSearch;
+   
      // Event untuk tombol close/tutup manual
     $('.btn-close, .btn-secondary').on('click', function() {
         const modal = $(this).closest('.modal');
@@ -1165,6 +1511,38 @@ function stopCameraLama() {
     // --- VALIDASI STEP 1 ---
     function validateStep1() {
         let valid = true;
+        let tglMulai = new Date($("#tglCheckin").val()); // Konversi ke Date
+        let tglSelesai = new Date($("#tglCheckout").val()); // Konversi ke Date
+        let dateNow = new Date();
+
+        dateNow.setHours(0, 0, 0, 0);
+        tglMulai.setHours(0, 0, 0, 0);
+        tglSelesai.setHours(0, 0, 0, 0);
+
+        if(tglSelesai < dateNow){
+            valid = false;
+            alert("⚠ Tanggal check-out tidak boleh kurang dari tanggal hari ini!");
+            return valid;
+        } 
+
+        if(tglMulai < dateNow){
+            valid = false;
+            alert("⚠ Tanggal check-in tidak boleh kurang dari tanggal hari ini!");
+            return valid;
+        } 
+
+        if(tglSelesai < tglMulai){
+            valid = false;
+            alert("⚠ Tanggal check-out tidak boleh kurang dari tanggal check-in!");
+            return valid;
+        }
+
+        if (tglSelesai === tglMulai) {
+            valid = false;
+            alert("⚠ Tanggal check-in dan check-out tidak boleh sama!");
+            return valid;
+        }
+
         $("#step1 [required]").each(function() {
             if (!$(this).val()) {
                 valid = false;
