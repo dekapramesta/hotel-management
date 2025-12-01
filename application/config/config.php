@@ -24,7 +24,10 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 |
 */
 
-$config['base_url'] = 'http://localhost/hotel-management/';
+$config['base_url'] = ((isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ? "https" : "http")
+    . "://"
+    . $_SERVER['HTTP_HOST']
+    . "/";
 
 /*
 |--------------------------------------------------------------------------
