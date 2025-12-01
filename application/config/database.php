@@ -75,9 +75,9 @@ $query_builder = TRUE;
 
 $db['default'] = array(
 	'dsn'	=> '',
-	'hostname' => 'localhost',
-	'username' => 'root',
-	'password' => '',
+	'hostname' => '202.10.44.165',
+	'username' => 'hotel_user',
+	'password' => 'passwordku123',
 	'database' => 'hotel_management',
 	'dbdriver' => 'mysqli',
 	'dbprefix' => '',
