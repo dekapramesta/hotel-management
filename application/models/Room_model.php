@@ -76,15 +76,45 @@ class Room_model extends CI_Model
             ]);
     }
 
-    public function setBooked($room_id)
+    public function setBooked($room_id, $type)
     {
-        $sql = "UPDATE ROOMS SET STATUS = 'booked' where id = '$room_id'";
+        if ($type == "kamar") {
+            $table = "rooms";
+        } else {
+            $table = "rooms_meet";
+        }
+        $sql = "UPDATE $table SET STATUS = 'booked' where id = '$room_id'";
         return $this->db->query($sql);
     }
 
-    public function getOneRoomAvail($check_out_date)
+    public function getRoomAvail($check_out_date, $limit = 0)
     {
-        $sql = "select * from rooms where id not in (select room_id from bookings where check_out_date >= date_format('$check_out_date', '%d/%m/%y')) and status not in ('booked', 'occupied') order by id asc limit 1";
+        $sql = "select * from rooms where id not in (select room_id from bookings where check_out_date >= date_format('$check_out_date', '%d/%m/%y')) and status not in ('booked', 'occupied') order by id asc";
+        if ($limit > 0) {
+            $sql .= " limit 1";
+        }
         return $this->db->query($sql)->result_array();
+    }
+
+    public function getMeetAvail($check_out_date, $limit = 0)
+    {
+        $sql = "select * from rooms_meet where id not in (select meet_id from bookings where check_out_date >= date_format('$check_out_date', '%d/%m/%y')) and status not in ('booked', 'occupied') order by id asc";
+        if ($limit > 0) {
+            $sql .= " limit 1";
+        }
+        return $this->db->query($sql)->result_array();
+    }
+
+    public function checkCapacity($type, $id)
+    {
+        if ($type == 'kamar') {
+            $table = " rooms";
+            $select = " room_number as NAME";
+        } else {
+            $select = " room_name as NAME";
+            $table = " rooms_meet";
+        }
+        $sql = "SELECT CAPACITY, $select FROM $table WHERE ID = '$id'";
+        return $this->db->query($sql)->row_array();
     }
 }

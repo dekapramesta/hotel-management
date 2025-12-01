@@ -17,7 +17,14 @@
                     <i class="bi bi-file-earmark-arrow-down pe-1"></i>
                     Template
                 </a>
-                <button type="button" id="btnSubmit" class="btn btn-primary" style="display: none;">Submit</button>
+                <button type="button" class="btn btn-warning text-white" id="btnGetData">
+                    <i class="bi bi-file-earmark-text"></i>
+                    Get Data
+                </button>
+                <button type="button" id="btnSubmit" class="btn btn-primary" style="display: none;">
+                    <i class="bi bi-send"></i>
+                    Submit
+                </button>
             </div>
         </div>
     </div>
@@ -38,6 +45,8 @@
                         <th style="background-color: #060771;color: white;">Jabatan</th>
                         <th style="background-color: #060771;color: white;">Unit Induk</th>
                         <th style="background-color: #060771;color: white;">Jenis Kelamin</th>
+                        <th style="background-color: #e67e22;color: white;">Ruangan</th>
+                        <th style="background-color: #e67e22;color: white;">Kamar</th>
                     </tr>
                 </thead>
                 <tbody id="body-table"></tbody>
@@ -67,7 +76,39 @@
                 }
             });
         }
+        getFloorAvail()
     });
+    var room = "";
+    var meet = "";
+
+    function getFloorAvail() {
+        $.ajax({
+            url: '<?= base_url() ?>Booking/getFloor',
+            type: 'POST',
+            data: {
+                tanggal: 'sekarang',
+            },
+            success: (response) => {
+                var res = JSON.parse(response)
+                room = "";
+                meet = "";
+                if (res.msg['room'].length > 0) {
+                    $.each(res.msg['room'], (key, val) => {
+                        room += `<option value="` + val.id + `">` + val.room_number + `</option>`
+                    })
+                }
+                if (res.msg['meet'].length > 0) {
+                    $.each(res.msg['meet'], (key, val) => {
+                        meet += `<option value="` + val.id + `">` + val.room_name + `</option>`
+                    })
+                }
+            },
+            error: (ee) => {
+                var res = JSON.parse(ee.responseText)
+
+            }
+        })
+    }
 
     function importExcel() {
         submitimportExcel()
@@ -85,35 +126,7 @@
             processData: false,
             success: (response) => {
                 var res = JSON.parse(response)
-                var markup = '';
-                $('#body-table').empty()
-                if (res.msg.data.length > 0) {
-                    $('#btnSubmit').show()
-                    $.each(res.msg.data, (key, val) => {
-                        markup += `
-                        <tr>
-                            <td>` + val.no + `</td>
-                            <td>` + val.kode_pembelajaran + `</td>
-                            <td>` + val.judul_pembelajaran + `</td>
-                            <td>` + val.start_date + `</td>
-                            <td>` + val.end_date + `</td>
-                            <td>` + val.durasi + `</td>
-                            <td>` + val.nip + `</td>
-                            <td>` + val.nama + `</td>
-                            <td>` + val.jabatan + `</td>
-                            <td>` + val.unit_induk + `</td>
-                            <td>` + val.jenis_kelamin + `</td>
-                        </tr>`
-                    })
-                    toastr.success(res.msg.status)
-                    $('#body-table').append(markup)
-                } else {
-                    $('#btnSubmit').hide()
-                    markup += `
-                    <tr>
-                        <td>Belum Ada Data</td>
-                    </tr>`
-                }
+                loopData(res.msg.data, res.msg.status)
             },
             error: (ee) => {
                 var res = JSON.parse(ee.responseText)
@@ -134,8 +147,9 @@
             var row_data = {}
             var columnKeys = [
                 'No', 'Kode_Pembelajaran', 'Judul_Pembelajaran', 'Start_Date',
-                'End_Date', 'Durasi', 'NIP', 'Nama', 'Jabatan', 'Unit_Induk', 'Jenis_Kelamin'
+                'End_Date', 'Durasi', 'NIP', 'Nama', 'Jabatan', 'Unit_Induk', 'Jenis_Kelamin', 'Ruangan', 'Kamar'
             ];
+
             if (flag == 0) {
                 $.each(row2, (key2, val2) => {
                     if (flag == 0) {
@@ -143,7 +157,11 @@
                             flag = 1
                             return;
                         }
-                        if (columnKeys[key2]) {
+
+                        if (columnKeys[key2] == "Ruangan" || columnKeys[key2] == "Kamar") {
+                            var selected = $(val2).find('select').val();
+                            row_data[columnKeys[key2]] = selected;
+                        } else {
                             row_data[columnKeys[key2]] = val2.textContent.trim();
                         }
                     } else {
@@ -177,4 +195,60 @@
             })
         }
     })
+
+    $('#btnGetData').on("click", (e) => {
+        e.preventDefault()
+        $.ajax({
+            url: '<?= base_url() ?>Booking/getDataBatch',
+            type: 'POST',
+            success: (response) => {
+                var res = JSON.parse(response)
+                loopData(res, "berhasil")
+            },
+            error: (ee) => {
+                var res = JSON.parse(ee.responseText)
+                toastr.error(res)
+                console.log(res);
+            }
+        })
+    })
+
+    function loopData(data, status) {
+        var markup = '';
+        $('#body-table').empty()
+        if (data.length > 0) {
+            $('#btnSubmit').show()
+            $.each(data, (key, val) => {
+                markup += `
+                        <tr>
+                            <td>` + val.no + `</td>
+                            <td>` + val.kode_pembelajaran + `</td>
+                            <td>` + val.judul_pembelajaran + `</td>
+                            <td>` + val.start_date + `</td>
+                            <td>` + val.end_date + `</td>
+                            <td>` + val.durasi + `</td>
+                            <td>` + val.nip + `</td>
+                            <td>` + val.nama + `</td>
+                            <td>` + val.jabatan + `</td>
+                            <td>` + val.unit_induk + `</td>
+                            <td>` + val.jenis_kelamin + `</td>
+                            <td>
+                                <select class="select2" style="width:100%">` + meet + `</select>
+                            </td>
+                            <td>
+                                <select class="select2" style="width:100%">` + room + `</select>
+                            </td>
+                        </tr>`
+            })
+            toastr.success(status)
+        } else {
+            $('#btnSubmit').hide()
+            markup += `
+            <tr>
+            <td>Belum Ada Data</td>
+            </tr>`
+        }
+        $('#body-table').append(markup)
+        $('.select2').select2()
+    }
 </script>

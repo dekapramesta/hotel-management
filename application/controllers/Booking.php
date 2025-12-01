@@ -98,36 +98,17 @@ class Booking extends CI_Controller
         $array_insert = $this->input->post('data');
         try {
             $this->db->trans_begin();
-            $counter = 0;
-            $rooms = $this->room->getOneRoomAvail($array_insert[0]['Start_Date']);
-            if (count($rooms) == 0) {
-                throw new Exception("Kamar Tidak Tersedia / Kamar Melebihi batas Peserta");
-            }
-
-            $last_id_rooms = $rooms[0]['id'];
+            $sort_kamar = [];
+            $sort_ruangan = [];
             foreach ($array_insert as $key => $value) {
-                if ($counter >= $rooms[0]['capacity']) {
-                    $this->room->setBooked($rooms[0]['id']);
-                    $counter = 0;
-                    $rooms = $this->room->getOneRoomAvail($value['Start_Date']);
-                    if (count($rooms) == 0) {
-                        throw new Exception("Kamar Tidak Tersedia / Kamar Melebihi batas Peserta");
-                    }
-                    $last_id_rooms = $rooms[0]['id'];
-                } else {
-                    $counter++;
-                    $last_id_rooms = $rooms[0]['id'];
-                }
-                $rooms_id = $rooms[0]['id'];
-
                 $guest = $this->guest->getGuestByNipp($value['NIP']);
                 if (count($guest) == 0) {
                     throw new Exception("Peserta dengan nama " . $value['Nama'] . " Belum Terdaftar");
                 }
 
-
                 $booked = [
-                    "room_id" => $rooms_id,
+                    "room_id" => $value['Kamar'],
+                    "meet_id" => $value['Ruangan'],
                     "guest_id" => $guest[0]['id'],
                     "check_in_date" => $value['Start_Date'],
                     "check_out_date" => $value['End_Date'],
@@ -138,8 +119,37 @@ class Booking extends CI_Controller
                 if ($this->db->trans_status() == FALSE) {
                     throw new Exception("[ADD BATCH]");
                 }
+
+                $this->room->setBooked($value['Kamar'], 'kamar');
+                if ($this->db->trans_status() == FALSE) {
+                    throw new Exception("[SET ROOM BOOKED]");
+                }
+                $this->room->setBooked($value['Ruangan'], 'ruangan');
+                if ($this->db->trans_status() == FALSE) {
+                    throw new Exception("[SET ROOM MEET BOOKED]");
+                }
+
+                $sort_kamar[] = $value['Kamar'];
+                $sort_ruangan[] = $value['Ruangan'];
             }
-            $this->room->setBooked($last_id_rooms);
+            // sorting jumlah capacity
+            $rle_kamar = $this->runLengthEncode($sort_kamar);
+            $rle_ruangan = $this->runLengthEncode($sort_ruangan);
+
+            // validasi sorting
+            foreach ($rle_kamar as $key => $value) {
+                $cek_capacity = $this->room->checkCapacity('kamar', $value[0]);
+                if ($value[1] > $cek_capacity['CAPACITY']) {
+                    throw new Exception("Kamar " . $cek_capacity["NAME"] . " Melebihi kapasitas");
+                }
+            }
+
+            foreach ($rle_ruangan as $key => $value) {
+                $cek_capacity = $this->room->checkCapacity('ruangan', $value[0]);
+                if ($value[1] > $cek_capacity['CAPACITY']) {
+                    throw new Exception("Ruangan " . $cek_capacity["NAME"] . " Melebihi kapasitas");
+                }
+            }
             $this->db->trans_commit();
             $this->ErrorHandler(200, 'Berhasil Melakukan Batch Bookings', 'success');
         } catch (\Throwable $th) {
@@ -186,5 +196,77 @@ class Booking extends CI_Controller
         } catch (\Exception $e) {
             $this->ErrorHandler(500, 'Error loading spreadsheet: ' . $e->getMessage());
         }
+    }
+
+    public function getDataBatch()
+    {
+        $this->load->library('sheetdb');
+        $data = $this->sheetdb->get_data();
+        $key_mapping = [
+            "Kode Pembelajaran"     => "kode_pembelajaran",
+            "Judul Pembelajaran"    => "judul_pembelajaran",
+            "Start Date"            => "start_date",
+            "End Date"              => "end_date",
+            "Durasi (hari)"         => "durasi",
+            "NIP"                   => "nip",
+            "Nama"                  => "nama",
+            "Jabatan"               => "jabatan",
+            "Unit Induk"            => "unit_induk",
+            "Jenis Kelamin (L/P)"   => "jenis_kelamin",
+        ];
+        $newData = [];
+        foreach ($data as $key => $value) {
+            $row = [
+                "no" => $key + 1,
+            ];
+            foreach ($key_mapping as $old_key => $new_key) {
+                if (isset($value[$old_key])) {
+                    $row[$new_key] = $value[$old_key];
+                } else {
+                    $row[$new_key] = null;
+                }
+            }
+            $newData[] = $row;
+        }
+        echo json_encode($newData);
+    }
+
+    public function getFloor()
+    {
+        $data_room = $this->room->getRoomAvail("01/12/25", 0);
+        $data_meet = $this->room->getMeetAvail("01/12/25", 0);
+        $return = [
+            "room" => $data_room,
+            "meet" => $data_meet
+        ];
+        $this->ErrorHandler(200, $return, 'success');
+    }
+
+    function runLengthEncode(array $data)
+    {
+        if (empty($data)) {
+            return [];
+        }
+
+        $encoded_data = [];
+        $count = 0;
+        $current_value = null;
+        foreach ($data as $value) {
+            if ($value === $current_value) {
+                $count++;
+            } else {
+                if ($current_value !== null) {
+                    $encoded_data[] = [$current_value, $count];
+                }
+                $current_value = $value;
+                $count = 1;
+            }
+        }
+
+        if ($current_value !== null) {
+            $encoded_data[] = [$current_value, $count];
+        }
+
+        return $encoded_data;
     }
 }
