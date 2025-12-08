@@ -6,7 +6,7 @@ class Transaksi_model extends CI_Model {
 
     public function get_floor(){
 
-    	$sql = "SELECT * FROM FLOORS";
+    	$sql = "SELECT * FROM floors";
 
     	return $this->db->query($sql)->result_array();
     }

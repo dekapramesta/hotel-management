@@ -29,9 +29,9 @@ class Room_model extends CI_Model
 {
     return $this->db->query("
        select a.status, a.tipe_room, a.id, a.room_number, a.floor_id from ( 
-    select r.room_number, r.floor_id, r.status, r.id , 'ROOM' as TIPE_ROOM from rooms r
+    select r.room_number, r.floor_id, r.status, r.id , 'ROOM' as tipe_room from rooms r
 				union ALL
-				select rm.room_number, rm.floor_id, rm.status, rm.id , 'MEET' as TIPE_ROOM from rooms_meet rm
+				select rm.room_number, rm.floor_id, rm.status, rm.id , 'MEET' as tipe_room from rooms_meet rm
   ) a WHERE a.floor_id = ? ORDER BY a.room_number ASC
     ", [$floor_id])->result_array();
     }
@@ -45,7 +45,7 @@ class Room_model extends CI_Model
                     rs.status, 
                     f.description, 
                     rs.id AS room_id,
-                    rs.TIPE_ROOM
+                    rs.tipe_room
                 FROM floors f
                 LEFT JOIN (
                     SELECT 
@@ -53,7 +53,7 @@ class Room_model extends CI_Model
                         r.floor_id, 
                         r.status, 
                         r.id, 
-                        'ROOM' AS TIPE_ROOM 
+                        'ROOM' AS tipe_room 
                     FROM rooms r
                     UNION ALL
                     SELECT 
@@ -61,7 +61,7 @@ class Room_model extends CI_Model
                         rm.floor_id, 
                         rm.status, 
                         rm.id, 
-                        'MEET' AS TIPE_ROOM 
+                        'MEET' AS tipe_room 
                     FROM rooms_meet rm
                 ) rs ON CAST(rs.floor_id AS CHAR) = CAST(f.id AS CHAR)
                 WHERE 1=1";

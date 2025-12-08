@@ -97,9 +97,9 @@ class Booking_model extends CI_Model
         // 2. Cari room by nomor & lantai
         $roomSql = "
         select a.status, a.tipe_room, a.id, a.room_number, a.floor_id from ( 
-    select r.room_number, r.floor_id, r.status, r.id , 'ROOM' as TIPE_ROOM from rooms r
+    select r.room_number, r.floor_id, r.status, r.id , 'ROOM' as tipe_room from rooms r
 				union ALL
-				select rm.room_number, rm.floor_id, rm.status, rm.id , 'MEET' as TIPE_ROOM from rooms_meet rm
+				select rm.room_number, rm.floor_id, rm.status, rm.id , 'MEET' as tipe_room from rooms_meet rm
   ) a WHERE a.room_number = ? AND a.floor_id = ? LIMIT 1
         ";
         $room = $this->db->query($roomSql, [$nomorKamar, $lantaiKamar])->row();
@@ -261,7 +261,7 @@ class Booking_model extends CI_Model
         $variableAdd = implode(', ', $keys);
         $valueAdd = implode(', ', $values);
 
-        $sql = "INSERT INTO BOOKINGS (" . $variableAdd . ", CREATED_AT) 
+        $sql = "INSERT INTO bookings (" . $variableAdd . ", CREATED_AT) 
          VALUES (" . $valueAdd . ", NOW())";
 
         if ($this->db->query($sql)) {
