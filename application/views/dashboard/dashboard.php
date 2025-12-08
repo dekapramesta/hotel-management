@@ -253,7 +253,7 @@
         <select class="form-select filter-select" id="filter-lantai">
           <option value="">Semua Lantai</option>
           <?php foreach($floors as $floor){ ?>
-            <option value="<?= $floor['floor_number'] ?>"><?= $floor['description'] ?></option>
+            <option value="<?= $floor['id'] ?>"><?= $floor['description'] ?></option>
           <?php } ?>
         </select>
       </div>
@@ -313,6 +313,7 @@
 
           <!-- HIDDEN ROOM & USER -->
           <input type="hidden" id="room_id" name="room_id">
+          <input type="hidden" id="booking_id" name="booking_id">
           <input type="hidden" id="user_id_checkin" name="user_id">
           <input type="hidden" id="checkin_user_face_id" name="checkin_user_face_id">
 
@@ -509,7 +510,7 @@
                 <select class="form-select" id="lantaiKamar" required>
                   <option selected disabled>Pilih Lantai</option>
                   <?php foreach ($floors as $f) { ?>
-                    <option value="<?= $f['floor_number']; ?>">
+                    <option value="<?= $f['id']; ?>">
                       <?= $f['description']; ?>
                     </option>
                   <?php } ?>
@@ -962,13 +963,13 @@
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.18.0/dist/tf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
 
 <script>
 $(document).ready(function() {
-
 
 
 
@@ -1116,10 +1117,34 @@ function displayBookingResults(bookings) {
     
     bookings.forEach(function(booking) {
         // Format tanggal
-        const checkinDate = booking.checkin_date ? 
+        const checkinDate = booking.check_in_date ? 
             new Date(booking.checkin_date).toLocaleDateString('id-ID') : '-';
-        const checkoutDate = booking.checkout_date ? 
+        const checkoutDate = booking.check_out_date ? 
             new Date(booking.checkout_date).toLocaleDateString('id-ID') : '-';
+        let buttonCheckin = '';
+        if(booking.booking_status.toLowerCase() === 'booked'){
+          buttonCheckin = `
+            <button class="btn btn-sm btn-toska" 
+                            onclick="openCheckinModal('${booking.booking_id}', '${booking.room_id || ''}')"
+                            title="Lakukan Check-in untuk booking ini">
+                        <i class="bi bi-box-arrow-in-right me-1"></i> Check In
+                    </button>
+          `
+        }  else if(booking.booking_status.toLowerCase() === 'checked_in'){
+          buttonCheckin = `
+           <button class="btn btn-sm btn-danger" 
+                            onclick="openCheckOut('${booking.booking_id}')"
+                            title="Lakukan Check-out untuk Kamar ini">
+                        <i class="bi bi-box-arrow-in-right me-1"></i> Check Out
+                    </button>
+          `
+        } else {
+          buttonCheckin = `
+            <span class="badge bg-secondary">
+                        ${booking.booking_status || '-'}
+                    </span>
+          `
+        }
         
         html += `
             <tr>
@@ -1144,11 +1169,7 @@ function displayBookingResults(bookings) {
                     </span>
                 </td>
                 <td class="text-center">
-                    <button class="btn btn-sm btn-toska" 
-                            onclick="openCheckinModal('${booking.booking_id}', '${booking.room_id || ''}')"
-                            title="Lakukan Check-in untuk booking ini">
-                        <i class="bi bi-box-arrow-in-right me-1"></i> Check In
-                    </button>
+                    ${buttonCheckin}
                 </td>
             </tr>
         `;
@@ -1184,7 +1205,7 @@ window.openCheckinModal = function(bookingId, roomId) {
     $('#bookingSearchModal').modal('hide');
     
     // Buka modal room check-in
-    if (roomId) {
+    if (roomId && bookingId) {
         loadDataRoom(roomId, bookingId);
     } else {
         // Jika tidak ada roomId, tampilkan alert
@@ -2716,9 +2737,10 @@ let checkin_cameraBaru = null;
 let checkin_fotoListBaru = [];
 let checkin_fotoCounter = 0;
 
-function loadDataRoom(room_id) {
+function loadDataRoom(room_id, booking_id) {
     $.get("dashboard/room_detail/" + room_id, function(res) {
         $("#room_id").val(room_id);
+        $("#booking_id").val(booking_id);
         
         // Check apakah tamu baru atau lama
         checkUserFace(room_id);
@@ -2978,18 +3000,18 @@ function loadRooms(search = '', floor = '', status = '') {
             if (!result.success) return;
 
             const rooms = result.rooms;
-            let currentFloor = null;
+            let currentFloor = 0;
             let html = '';
 
             rooms.forEach(room => {
                 // buka card baru tiap lantai
-                if (currentFloor !== room.floor_id) {
+                if (currentFloor !== room.floor_id ) {
                     if (currentFloor !== null) {
                         html += '</div></div></div>';
                     }
-                    currentFloor = room.floor_id;
+                    currentFloor = room.floor_id ?? currentFloor + 1;
                     html += `<div class="card mb-4 shadow-sm">
-                                <div class="card-header">Lantai ${room.floor_id}</div>
+                                <div class="card-header">${room.description}</div>
                                 <div class="card-body">
                                     <div class="row row-cols-2 row-cols-md-4 g-3">`;
                 }
@@ -2998,11 +3020,13 @@ function loadRooms(search = '', floor = '', status = '') {
                 if (room.status === 'booked') statusAttr = 'data-status="occupied"';
                 else if (room.status === 'cleaning') statusAttr = 'data-status="cleaning"';
 
-                html += `<div class="col">
+                if(room.room_number){
+                  html += `<div class="col">
                             <button class="room-btn w-100 py-3" ${statusAttr} onclick="loadDataRoom('${room.room_id}')" data-room="${room.room_number}">
                                 ${room.room_number}
                             </button>
                          </div>`;
+                }
             });
 
             if (currentFloor !== null) html += '</div></div></div>';
@@ -3021,6 +3045,49 @@ $('#filter-search, #filter-lantai, #filter-status').on('input change', function(
     const status = $('#filter-status').val();
     loadRooms(search, floor, status);
 });
+
+
+
+  function openCheckOut(bookingID) {
+    Swal.fire({
+        title: "Yakin untuk Check Out?",
+        text: "Pastikan Anda Benar Selesai Menggunakan Kamar",
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonText: "Ya, Selesai",
+        cancelButtonText: "Belum",
+        reverseButtons: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+
+            // 🔥 KIRIM AJAX KE CONTROLLER
+            $.ajax({
+                url: '<?= base_url("booking/checkOutBooking") ?>' ,
+                type: "POST",
+                data: { booking_id: bookingID },
+                dataType: "json",
+                success: function(res) {
+                    Swal.fire({
+                        icon: res.status === "success" ? "success" : "error",
+                        title: res.message,
+                        confirmButtonText: "OK",
+                    }).then(() => {
+                        location.reload(); // Refresh halaman setelah OK
+                    });
+                },
+                error: function() {
+                    Swal.fire({
+                        icon: "error",
+                        title: "Terjadi kesalahan",
+                        text: "Gagal menghubungi server.",
+                    });
+                }
+            });
+
+        }
+    });
+}
+
 </script>
 <!-- ================================
        FACE MESH & CAMERA LIBRARIES
