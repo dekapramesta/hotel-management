@@ -3022,7 +3022,7 @@ function loadRooms(search = '', floor = '', status = '') {
 
                 if(room.room_number){
                   html += `<div class="col">
-                            <button class="room-btn w-100 py-3" ${statusAttr} onclick="loadDataRoom('${room.room_id}')" data-room="${room.room_number}">
+                            <button class="room-btn w-100 py-3" ${statusAttr} onclick="#" data-room="${room.room_number}">
                                 ${room.room_number}
                             </button>
                          </div>`;
