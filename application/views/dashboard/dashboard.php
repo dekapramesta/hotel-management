@@ -281,6 +281,10 @@
           <button class="btn btn-outline-toska me-2 shadow-sm" onclick="openBookingSearch()">
             <i class="bi bi-calendar-search"></i> Cari Booking
         </button>
+
+        <a href="<?= base_url();?>Booking/batch" class="btn btn-toska shadow-sm">
+            <i class="bi bi-calendar-plus"></i> Booking Batch
+        </a>
           <!-- Tombol Booking Baru (sudah ada) -->
           <button class="btn btn-toska shadow-sm" data-bs-toggle="modal" data-bs-target="#bookingWizardModal">
               <i class="bi bi-calendar-plus"></i> Booking Baru
