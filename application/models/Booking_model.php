@@ -95,7 +95,13 @@ class Booking_model extends CI_Model
         }
 
         // 2. Cari room by nomor & lantai
-        $roomSql = "SELECT id, status FROM rooms WHERE room_number = ? AND floor_id = ? LIMIT 1";
+        $roomSql = "
+        select a.status, a.tipe_room, a.id, a.room_number, a.floor_id from ( 
+    select r.room_number, r.floor_id, r.status, r.id , 'ROOM' as TIPE_ROOM from rooms r
+				union ALL
+				select rm.room_number, rm.floor_id, rm.status, rm.id , 'MEET' as TIPE_ROOM from rooms_meet rm
+  ) a WHERE a.room_number = ? AND a.floor_id = ? LIMIT 1
+        ";
         $room = $this->db->query($roomSql, [$nomorKamar, $lantaiKamar])->row();
 
         if (!$room) {
@@ -103,20 +109,26 @@ class Booking_model extends CI_Model
             return ['status' => 'error', 'message' => 'Kamar tidak ditemukan'];
         }
 
-        if ($room->status != 'available') {
+        if (strtolower($room->status) != 'available') {
             $this->db->trans_rollback();
             return ['status' => 'error', 'message' => 'Kamar sudah tidak tersedia'];
         }
 
         // 3. Insert booking
         $bookingSql = "INSERT INTO bookings 
-            (guest_id, room_id, check_in_date, check_out_date, status) 
-            VALUES (?, ?, ?, ?, 'booked')";
+            (guest_id, room_id, check_in_date, check_out_date, status, room_type, nipp) 
+            VALUES (?, ?, ?, ?, 'booked', ?, ?)";
 
-        $this->db->query($bookingSql, [$guestId, $room->id, $tglCheckin, $tglCheckout]);
+        $this->db->query($bookingSql, [$guestId, $room->id, $tglCheckin, $tglCheckout, $room->tipe_room, $nipp]);
 
         // 4. Update status room
-        $updateRoomSql = "UPDATE rooms SET status = '".$status_kamar."' WHERE id = ?";
+
+        if($room->tipe_room == 'ROOM'){
+            $updateRoomSql = "UPDATE rooms SET status = '".$status_kamar."' WHERE id = ?";
+        } else {
+            $updateRoomSql = "UPDATE rooms_meet SET status = '".$status_kamar."' WHERE id = ?";
+        }
+        
         $this->db->query($updateRoomSql, [$room->id]);
 
         $this->db->trans_complete();
@@ -127,20 +139,34 @@ class Booking_model extends CI_Model
             return ['status' => 'success', 'message' => 'Booking berhasil disimpan'];
         }
     }
+}
 
 
-    public function check_active_booking($room_id, $guest_id)
+     public function check_active_booking($room_id, $nipp, $booking_id)
     {
         $sql = "
             SELECT *
             FROM bookings b
             WHERE b.room_id = ?
-              AND b.guest_id = ?
+              AND b.nipp = ?
+              and b.id = ?
               AND NOW() BETWEEN b.check_in_date AND b.check_out_date
         ";
 
-        $query = $this->db->query($sql, [$room_id, $guest_id]);
-        return $query->num_rows() > 0;
+        $query = $this->db->query($sql, [$room_id, $nipp, $booking_id]);
+        return $query->row() ;
+    }
+
+    public function updateStatusBooking($booking_id, $status)
+    {
+        $sql = "UPDATE bookings SET status = ? WHERE id = ?";
+        return $this->db->query($sql, [$status, $booking_id]);
+    }
+
+    public function updateFaceId($nipp, $user_face_id)
+    {
+        $sql = "UPDATE guests SET user_face_id = ? WHERE nipp = ?";
+        return $this->db->query($sql, [$user_face_id, $nipp]);
     }
 
     public function getUserBooking($guest_id)
@@ -165,6 +191,17 @@ class Booking_model extends CI_Model
         return $this->db->query($sql, [$guest_id])->result();
     }
 
+    public function checkOutBooking($booking_id){
+        $sql = "UPDATE bookings SET status = 'checked_out' WHERE id = ?";
+        $this->db->query($sql, [$booking_id]);
+
+        $sqlKamar = " update rooms r set status = 'available' where r.id = (select distinct b.room_id from bookings b where b.id = ? ) ";
+        $this->db->query($sqlKamar, [$booking_id]);
+
+        return true;
+
+    }
+
       public function search_bookings($search_term) {
         $this->db->select('
             b.id as booking_id, 
@@ -177,6 +214,7 @@ class Booking_model extends CI_Model
             r.floor_name,
             b.room_type,
             g.nama,
+            b.status as booking_status,
             b.check_in_date , b.check_out_date
         ');
         

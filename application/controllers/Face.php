@@ -24,6 +24,40 @@ class Face extends CI_Controller {
         $results = [];
         $total = count($photos['name']);
 
+
+            /** ------------------------------------------
+         * 1. Cek apakah wajah sudah ada via verify()
+         *    Gunakan foto pertama saja untuk pengecekan
+         * ----------------------------------------- */
+        $first_tmp = $photos['tmp_name'][0];
+        $first_name = $photos['name'][0];
+        $first_mime = mime_content_type($first_tmp);
+
+        $cfile = new CURLFile($first_tmp, $first_mime, $first_name);
+
+        $check = curl_init();
+        curl_setopt_array($check, [
+            CURLOPT_URL => "http://127.0.0.1:8000/face/verify",
+            CURLOPT_POST => true,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POSTFIELDS => ["file" => $cfile]
+        ]);
+
+        $verifyResponse = curl_exec($check);
+        curl_close($check);
+
+        $verifyResult = json_decode($verifyResponse, true);
+
+        if (!empty($verifyResult['success']) && $verifyResult['success'] === true) {
+            // Kalau berhasil verifikasi = wajah sudah terdaftar
+            echo json_encode([
+                "success" => false,
+                "message" => "Wajah sudah pernah terdaftar!",
+                "existing_user_id" => $verifyResult['user_id']
+            ]);
+            return;
+        }
+
         for ($i = 0; $i < $total; $i++) {
 
             // Setup file untuk CURL
@@ -98,6 +132,7 @@ class Face extends CI_Controller {
         $response = curl_exec($curl);
         $error = curl_error($curl);
         curl_close($curl);
+        echo json_encode(["response" => $response, "error" => $error]);
 
         if ($error) {
             echo json_encode(["success" => false, "message" => $error]);
