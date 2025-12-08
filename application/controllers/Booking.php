@@ -47,6 +47,14 @@ class Booking extends CI_Controller {
         echo json_encode($data);
     }
 
+    public function checkOutBooking()
+    {
+        $this->load->model('Booking_model');
+        $booking_id = $this->input->post('booking_id');
+        $this->Booking_model->checkOutBooking($booking_id);
+        echo json_encode(['status' => 'success', 'message' => 'Check-out berhasil. Kamar sudah tersedia kembali.']);
+    }
+
     public function check_active_booking($room_id, $guest_id)
     {
         return $this->db
@@ -60,13 +68,18 @@ class Booking extends CI_Controller {
     public function checkin()
     {
         $room_id  = $this->input->post("room_id");
+        $nipp  = $this->input->post("nipp");
+        $user_face_id = $this->input->post("checkin_user_face_id");
         $user_id = $this->input->post("user_id");
+        $booking_id = $this->input->post("booking_id");
 
         $this->load->model("Booking_model");
         $this->load->model("Room_model");
 
         // cek apakah booking valid
-        $booking = $this->Booking_model->check_active_booking($room_id, $user_id);
+        // echo json_encode($booking_id);exit;
+        $booking = $this->Booking_model->check_active_booking($room_id, $nipp, $booking_id);
+
 
         if (!$booking) {
             echo json_encode([
@@ -75,9 +88,14 @@ class Booking extends CI_Controller {
             ]);
             return;
         }
+        
+        //upbah menjadi checked_in
+        $this->Booking_model->updateStatusBooking($booking_id, 'checked_in');
+        // update user_face_id di tabel tamu
+        $this->Booking_model->updateFaceId($nipp, $user_face_id);
 
         // update status kamar menjadi occupied
-        $this->Room_model->set_occupied($room_id);
+        $this->Room_model->set_occupied($room_id, $booking->room_type);
 
         echo json_encode([
             "success" => true,
