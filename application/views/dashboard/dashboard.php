@@ -222,6 +222,25 @@
 .table td {
     vertical-align: middle;
 }
+
+.summary-box {
+  border-radius: 10px;
+  padding: 12px;
+  text-align: center;
+}
+
+.summary-title {
+  font-size: 13px;
+  font-weight: 600;
+  opacity: 0.9;
+}
+
+.summary-value {
+  font-size: 22px;
+  font-weight: 700;
+  margin-top: 4px;
+}
+
   </style>
 </head>
 <body>
@@ -271,6 +290,42 @@
 
     </div>
   </div>
+
+    <!-- SUMMARY STATUS -->
+<div class="row mb-4 g-3">
+
+  <div class="col-md-3 col-6">
+    <div class="summary-box bg-success-subtle text-success shadow-sm">
+      <div class="summary-title">Kamar Tersedia</div>
+      <div class="summary-value" id="count-available"><?=$jumlah_kamar  ?></div>
+    </div>
+  </div>
+
+  <div class="col-md-3 col-6">
+    <div class="summary-box bg-danger-subtle text-danger shadow-sm">
+      <div class="summary-title">Kamar Terpakai</div>
+      <div class="summary-value" id="count-booked"><?= $kamar_terisi?></div>
+    </div>
+  </div>
+
+  <div class="col-md-3 col-6">
+    <div class="summary-box bg-primary-subtle text-primary shadow-sm">
+      <div class="summary-title">Meeting Room</div>
+      <div class="summary-value" id="count-meeting-total">
+        <?= $jumlah_meeting_room ?>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-3 col-6">
+    <div class="summary-box bg-warning-subtle text-warning shadow-sm">
+      <div class="summary-title">Meeting Digunakan</div>
+      <div class="summary-value" id="count-meeting-used"> <?= $meeting_room_terisi ?> </div>
+    </div>
+  </div>
+
+</div>
+
 
   <!-- Tombol Booking -->
   <!-- File: application/views/dashboard/index.php (bagian header) -->

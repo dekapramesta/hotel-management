@@ -190,4 +190,35 @@ class Room_model extends CI_Model
         $sql = "SELECT CAPACITY, $select FROM $table WHERE ID = '$id'";
         return $this->db->query($sql)->row_array();
     }
+
+     public function count_all_rooms()
+    {
+        return $this->db
+            ->where('LOWER(status)', strtolower('available'))
+            ->count_all_results('rooms');
+    }
+
+    public function count_rooms_by_status($status)
+    {
+        return $this->db
+            ->where('LOWER(status)', strtolower($status))
+            ->count_all_results('rooms');
+    }
+
+    /* =======================
+       MEETING ROOM
+       ======================= */
+
+    public function count_meeting_rooms()
+    {
+        return $this->db
+            ->count_all_results('rooms_meet');
+    }
+
+    public function count_meeting_rooms_by_status($status)
+    {
+        return $this->db
+            ->where('LOWER(status)', strtolower($status))
+            ->count_all_results('rooms_meet');
+    }
 }

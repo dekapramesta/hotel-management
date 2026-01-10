@@ -31,6 +31,11 @@ class Dashboard extends CI_Controller{
       $data['title'] = 'Room Monitoring';
       $data['floors'] = $this->Transaksi_model->get_floor();
       $data['rooms']  = $this->Room_model->get_all_rooms();
+      $data['jumlah_kamar'] = $this->Room_model->count_all_rooms();
+      $data['kamar_terisi'] = $this->Room_model->count_rooms_by_status('occupied');
+      $data['jumlah_meeting_room'] = $this->Room_model->count_meeting_rooms();
+      $data['meeting_room_terisi'] = $this->Room_model->count_meeting_rooms_by_status('occupied');
+      
       // $data['floors'] = $this->Room_model->get_all_floors();
       $this->load->view('templates/header', $data);
       $this->load->view('templates/navbar');
