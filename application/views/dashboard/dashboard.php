@@ -2107,6 +2107,7 @@ function clearReservationLamaForm() {
             $("#finishBtn").prop("disabled", true).text("Menyimpan...");
         },
         success: function(response) {
+            console.log("Response dari server:", response);
             if (response.status === "success") {
                 alert("✅ Booking berhasil disimpan!");
                 $("#wizardForm")[0].reset();

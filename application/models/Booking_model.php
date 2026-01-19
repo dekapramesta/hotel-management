@@ -80,20 +80,19 @@ class Booking_model extends CI_Model
         
 
         // Jika guestId tidak ditemukan (user_face_id null atau tidak ditemukan), lakukan insert baru
-        if (empty($guestId)) {
+      if (empty($guestId)) {
             $guestSql = "INSERT INTO guests 
                 (nama, nik, telepon, email, alamat, foto_wajah, user_face_id, kendaraan, nomor_polisi, unit_induk, jabatan, nipp, kelamin) 
                 VALUES 
                 (?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?)";
 
-        $this->db->query($guestSql, [$nama, $nik, $hp, $email, $alamat, $userFaceId]);
+        $this->db->query($guestSql, [$nama, $nik, $hp, $email, $alamat, $userFaceId, $kendaraan, $nomorPolisi, $unitInduk, $jabatan, $nipp, $kelamin]);
         $guestId = $this->db->insert_id();
 
         if (!$guestId) {
-            $this->db->trans_rollback();
-            return ['status' => 'error', 'message' => 'Gagal menyimpan tamu'];
+                    $this->db->trans_rollback();
+                    return ['status' => 'error', 'message' => 'Gagal menyimpan tamu'];
         }
-
         // 2. Cari room by nomor & lantai
         $roomSql = "
         select a.status, a.tipe_room, a.id, a.room_number, a.floor_id from ( 
