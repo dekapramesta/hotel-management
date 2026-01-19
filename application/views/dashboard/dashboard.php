@@ -19,7 +19,7 @@
     }
 
     .container {
-      max-width: 1100px;
+      max-width: 1500px;
     }
 
     .text-toska {
@@ -3049,6 +3049,22 @@ function createFaceMeshNew(onResultsCallback) {
         return fm;
     }
 
+    
+function renderRoom(room) {
+    let statusAttr = '';
+    if (room.status === 'booked') statusAttr = 'data-status="occupied"';
+    else if (room.status === 'cleaning') statusAttr = 'data-status="cleaning"';
+
+    return `
+        <div class="col">
+            <button class="room-btn w-100 py-3" ${statusAttr}>
+                ${room.room_number}
+            </button>
+        </div>
+    `;
+}
+
+
 function loadRooms(search = '', floor = '', status = '') {
     $.ajax({
         url: '<?= base_url("dashboard/filter") ?>',
@@ -3056,41 +3072,80 @@ function loadRooms(search = '', floor = '', status = '') {
         data: { search, floor, status },
         dataType: 'json',
         success: function(result) {
-            if (!result.success) return;
+    if (!result.success) return;
 
-            const rooms = result.rooms;
-            let currentFloor = 0;
-            let html = '';
+    const rooms = result.rooms;
+    const floors = {};
 
-            rooms.forEach(room => {
-                // buka card baru tiap lantai
-                if (currentFloor !== room.floor_id ) {
-                    if (currentFloor !== null) {
-                        html += '</div></div></div>';
-                    }
-                    currentFloor = room.floor_id ?? currentFloor + 1;
-                    html += `<div class="card mb-4 shadow-sm">
-                                <div class="card-header">${room.description}</div>
-                                <div class="card-body">
-                                    <div class="row row-cols-2 row-cols-md-4 g-3">`;
-                }
+    // 1. Group data per lantai dan tipe
+    rooms.forEach(r => {
+        if (!floors[r.floor_id]) {
+            floors[r.floor_id] = {
+                description: r.description,
+                ROOM: [],
+                MEET: []
+            };
+        }
+        if (r.tipe_room === 'ROOM') floors[r.floor_id].ROOM.push(r);
+        if (r.tipe_room === 'MEET') floors[r.floor_id].MEET.push(r);
+    });
 
-                let statusAttr = '';
-                if (room.status === 'booked') statusAttr = 'data-status="occupied"';
-                else if (room.status === 'cleaning') statusAttr = 'data-status="cleaning"';
+    // 2. Render HTML TERPISAH
+    let html = `
+        <div class="row">
+            <!-- KIRI : KAMAR -->
+            <div class="col-md-6">
+                <h5 class="fw-bold mb-3">RUANG KAMAR</h5>
+    `;
 
-                if(room.room_number){
-                  html += `<div class="col">
-                            <button class="room-btn w-100 py-3" ${statusAttr} onclick="#" data-room="${room.room_number}">
-                                ${room.room_number}
-                            </button>
-                         </div>`;
-                }
-            });
+    Object.keys(floors).forEach(floorId => {
+        const floor = floors[floorId];
+        if (!floor.ROOM.length) return;
 
-            if (currentFloor !== null) html += '</div></div></div>';
-            $('#rooms-container').html(html);
-        },
+        html += `
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header">${floor.description}</div>
+                <div class="card-body">
+                    <div class="row row-cols-2 row-cols-md-3 g-3">
+                        ${floor.ROOM.map(room => renderRoom(room)).join('')}
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+
+    html += `
+            </div>
+
+            <!-- KANAN : MEETING -->
+            <div class="col-md-6">
+                <h5 class="fw-bold mb-3">RUANG RAPAT</h5>
+    `;
+
+    Object.keys(floors).forEach(floorId => {
+        const floor = floors[floorId];
+        if (!floor.MEET.length) return;
+
+        html += `
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header">${floor.description}</div>
+                <div class="card-body">
+                    <div class="row row-cols-2 row-cols-md-3 g-3">
+                        ${floor.MEET.map(room => renderRoom(room)).join('')}
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+
+    html += `
+            </div>
+        </div>
+    `;
+
+    $('#rooms-container').html(html);
+},
+
         error: function(err) {
             console.error(err);
         }
