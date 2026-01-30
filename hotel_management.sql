@@ -226,6 +226,104 @@ INSERT INTO `users` (`id`, `username`, `password`, `nama_lengkap`, `role`, `crea
 	(2, 'reception', '391db9de95524e0b0c952fc77d670853', 'Receptionist', 'receptionist', '2025-11-13 02:32:18'),
 	(3, 'cleaner', '733143d386b0cb4dcd485dbc70af9207', 'Cleaner', 'cleaning_service', '2025-11-13 02:32:18');
 
+-- dummy for cleaning pass admin123
+  insert into users
+(username, password, nama_lengkap, role)
+values
+('cleaner1', '0192023a7bbd73250516f069df18b500', 'Anto', 'cleaning_service');
+
+-- create table for user cleaner
+create table
+cleaning_user
+(
+id int auto_increment primary key,
+nama varchar(100),
+lantai varchar(100),
+room_id varchar(100),
+type varchar(100)
+)
+
+-- inserting data for cleaner user
+insert into cleaning_user
+(nama, lantai, room_id, type)
+values
+('cleaner1', '2', '64', 'room');
+insert into cleaning_user
+(nama, lantai, room_id, type)
+values
+('cleaner1', '2', '65', 'room');
+insert into cleaning_user
+(nama, lantai, room_id, type)
+values
+('cleaner1', '2', '66', 'room');
+insert into cleaning_user
+(nama, lantai, room_id, type)
+values
+('cleaner1', '2', '67', 'room');
+insert into cleaning_user
+(nama, lantai, room_id, type)
+values
+('cleaner1', '2', '68', 'room');
+insert into cleaning_user
+(nama, lantai, room_id, type)
+values
+('cleaner1', '2', '69', 'room');
+insert into cleaning_user
+(nama, lantai, room_id, type)
+values
+('cleaner1', '2', '70', 'room');
+insert into cleaning_user
+(nama, lantai, room_id, type)
+values
+('cleaner1', '3', '79', 'room');
+insert into cleaning_user
+(nama, lantai, room_id, type)
+values
+('cleaner1', '3', '80', 'room');
+insert into cleaning_user
+(nama, lantai, room_id, type)
+values
+('cleaner1', '3', '81', 'room');
+insert into cleaning_user
+(nama, lantai, room_id, type)
+values
+('cleaner1', '3', '82', 'room');
+insert into cleaning_user
+(nama, lantai, room_id, type)
+values
+('cleaner1', '3', '83', 'room');
+insert into cleaning_user
+(nama, lantai, room_id, type)
+values
+('cleaner1', '3', '84', 'room');
+insert into cleaning_user
+(nama, lantai, room_id, type)
+values
+('cleaner1', '3', '85', 'room');
+insert into cleaning_user
+(nama, lantai, room_id, type)
+values
+('cleaner1', '2', '1', 'meet');
+insert into cleaning_user
+(nama, lantai, room_id, type)
+values
+('cleaner1', '2', '2', 'meet');
+insert into cleaning_user
+(nama, lantai, room_id, type)
+values
+('cleaner1', '2', '3', 'meet');
+insert into cleaning_user
+(nama, lantai, room_id, type)
+values
+('cleaner1', '2', '4', 'meet');
+insert into cleaning_user
+(nama, lantai, room_id, type)
+values
+('cleaner1', '2', '5', 'meet');
+
+alter table cleaning_user add cleaner_id varchar(10);
+update cleaning_user set cleaner_id = '4';
+
 /*!40103 SET TIME_ZONE=IFNULL(@OLD_TIME_ZONE, 'system') */;
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;
 /*!40014 SET FOREIGN_KEY_CHECKS=IFNULL(@OLD_FOREIGN_KEY_CHECKS, 1) */;

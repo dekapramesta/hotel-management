@@ -1,5 +1,5 @@
 <?php
-defined('BASEPATH') OR exit('No direct script access allowed');
+defined('BASEPATH') or exit('No direct script access allowed');
 
 /*
 | -------------------------------------------------------------------
@@ -75,9 +75,11 @@ $query_builder = TRUE;
 
 $db['default'] = array(
 	'dsn'	=> '',
+	// 'hostname' => '202.10.44.165',
 	'hostname' => 'localhost',
-	'username' => 'hotel_user',
-	'password' => 'passwordku123',
+	'username' => 'root',
+	// 'password' => 'passwordku123',
+	'password' => '',
 	'database' => 'hotel_management',
 	'dbdriver' => 'mysqli',
 	'dbprefix' => '',
