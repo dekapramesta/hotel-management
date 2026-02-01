@@ -132,10 +132,9 @@ class Face extends CI_Controller {
         $response = curl_exec($curl);
         $error = curl_error($curl);
         curl_close($curl);
-        echo json_encode(["response" => $response, "error" => $error]);
 
         if ($error) {
-            echo json_encode(["success" => false, "message" => $error]);
+            echo json_encode(["success" => false, "message" => "CURL Error: " . $error]);
             return;
         }
 

@@ -42,10 +42,12 @@ class Booking_model extends CI_Model
             }
             $status_kamar = 'booked';
         }
+        
 
         if($jenis_pemesanan == 'reservation_lama'){
             //ambil guest id dari nipp
-            $guestData = $this->db->where("nipp", $nipp)->get("guests")->row();
+            $guestData = $this->db->where("nipp", $nipp)->get("guests")->row();            
+
             if($guestData){
                 $guestId = $guestData->id;
             } else {
@@ -78,7 +80,6 @@ class Booking_model extends CI_Model
 
 
         
-
         // Jika guestId tidak ditemukan (user_face_id null atau tidak ditemukan), lakukan insert baru
       if (empty($guestId)) {
             $guestSql = "INSERT INTO guests 
@@ -88,6 +89,7 @@ class Booking_model extends CI_Model
 
         $this->db->query($guestSql, [$nama, $nik, $hp, $email, $alamat, $userFaceId, $kendaraan, $nomorPolisi, $unitInduk, $jabatan, $nipp, $kelamin]);
         $guestId = $this->db->insert_id();
+      }
 
         if (!$guestId) {
                     $this->db->trans_rollback();
@@ -108,9 +110,18 @@ class Booking_model extends CI_Model
             return ['status' => 'error', 'message' => 'Kamar tidak ditemukan'];
         }
 
-        if (strtolower($room->status) != 'available') {
-            $this->db->trans_rollback();
-            return ['status' => 'error', 'message' => 'Kamar sudah tidak tersedia'];
+        if ($status_kamar == 'booked') {
+            // Reservation allowed if available or cleaning
+            if (!in_array(strtolower($room->status), ['available', 'cleaning'])) {
+                $this->db->trans_rollback();
+                return ['status' => 'error', 'message' => 'Kamar tidak tersedia untuk reservasi'];
+            }
+        } else {
+            // Check-in (occupied) only allowed if available
+            if (strtolower($room->status) != 'available') {
+                $this->db->trans_rollback();
+                return ['status' => 'error', 'message' => 'Kamar belum siap untuk check-in (masih ' . $room->status . ')'];
+            }
         }
 
         // 3. Insert booking
@@ -135,10 +146,31 @@ class Booking_model extends CI_Model
         if ($this->db->trans_status() === false) {
             return ['status' => 'error', 'message' => 'Gagal menyimpan booking'];
         } else {
+            // Log the booking activity
+            $id_booking = $this->db->query("SELECT id FROM bookings WHERE guest_id = ? AND room_id = ? AND status = 'booked' ORDER BY id DESC LIMIT 1", [$guestId, $room->id])->row()->id;
+            
+            // For reservations/checkins, tanggal_activity is $tglCheckin
+            $tanggal_activity = date('Y-m-d H:i:s', strtotime(str_replace('/', '-', $tglCheckin)));
+            $this->_log_booking($room->id, $id_booking, $room->tipe_room, $status_kamar, $tanggal_activity);
+
             return ['status' => 'success', 'message' => 'Booking berhasil disimpan'];
         }
-    }
+    
 }
+
+    private function _log_booking($id_kamar, $id_booking, $jenis_ruangan, $activity, $tanggal_activity = null)
+    {
+        $created_by = $this->session->userdata('user_name') ?: 'System';
+        $logData = [
+            'id_kamar' => $id_kamar,
+            'id_booking' => $id_booking,
+            'jenis_ruangan' => $jenis_ruangan,
+            'activity' => $activity,
+            'created_by' => $created_by,
+            'tanggal_activity' => $tanggal_activity ?: date('Y-m-d H:i:s')
+        ];
+        return $this->db->insert('log_booking', $logData);
+    }
 
 
      public function check_active_booking($room_id, $nipp, $booking_id)
@@ -154,6 +186,24 @@ class Booking_model extends CI_Model
 
         $query = $this->db->query($sql, [$room_id, $nipp, $booking_id]);
         return $query->row() ;
+    }
+
+    public function get_active_booking_by_room($room_id, $room_type, $date = null)
+    {
+        if (!$date) $date = date('Y-m-d');
+        
+        $sql = "SELECT b.id as booking_id, b.check_in_date, b.check_out_date, b.status as booking_status, b.nipp,
+                       g.nama, g.telepon, g.email, g.alamat, g.kendaraan, g.nomor_polisi, g.unit_induk, g.jabatan, g.kelamin
+                FROM bookings b
+                JOIN guests g ON b.nipp = g.nipp
+                WHERE b.room_id = ? 
+                  AND b.room_type = ? 
+                  AND ? BETWEEN b.check_in_date AND b.check_out_date
+                  AND b.status != 'checked_out'
+                ORDER BY b.id DESC
+                LIMIT 1";
+        
+        return $this->db->query($sql, [$room_id, $room_type, $date])->row_array();
     }
 
     public function updateStatusBooking($booking_id, $status)
@@ -191,11 +241,19 @@ class Booking_model extends CI_Model
     }
 
     public function checkOutBooking($booking_id){
+        // Fetch booking details before updating
+        $booking = $this->db->query("SELECT room_id, room_type FROM bookings WHERE id = ?", [$booking_id])->row();
+
         $sql = "UPDATE bookings SET status = 'checked_out' WHERE id = ?";
         $this->db->query($sql, [$booking_id]);
 
         $sqlKamar = " update rooms r set status = 'available' where r.id = (select distinct b.room_id from bookings b where b.id = ? ) ";
         $this->db->query($sqlKamar, [$booking_id]);
+
+        if ($booking) {
+            // Check-out is now, so current timestamp is appropriate
+            $this->_log_booking($booking->room_id, $booking_id, $booking->room_type, 'checked_out', date('Y-m-d H:i:s'));
+        }
 
         return true;
 
@@ -268,5 +326,62 @@ class Booking_model extends CI_Model
         } else {
             return $sql;
         }
+    }
+
+    public function get_log_booking()
+    {
+        $this->db->select('lb.*, g.nama as guest_name, COALESCE(r.room_number, rm.room_number) as room_number');
+        $this->db->from('log_booking lb');
+        $this->db->join('bookings b', 'lb.id_booking = b.id', 'left');
+        $this->db->join('guests g', 'b.guest_id = g.id', 'left');
+        $this->db->join('rooms r', 'lb.id_kamar = r.id AND lb.jenis_ruangan = "ROOM"', 'left');
+        $this->db->join('rooms_meet rm', 'lb.id_kamar = rm.id AND lb.jenis_ruangan = "MEET"', 'left');
+        $this->db->order_by('lb.created', 'DESC');
+        return $this->db->get()->result_array();
+    }
+
+    public function get_log_booking_grouped($limit = null, $offset = null, $start_date = null, $end_date = null)
+    {
+        $this->db->select("
+            b.id as booking_id,
+            g.nama as guest_name,
+            COALESCE(r.room_number, rm.room_number) as room_number,
+            b.status as current_status,
+            MIN(IF(lb.activity = 'booked', lb.tanggal_activity, NULL)) as reserved_at,
+            MAX(IF(lb.activity = 'occupied', lb.tanggal_activity, NULL)) as checked_in_at,
+            MAX(IF(lb.activity = 'checked_out', lb.tanggal_activity, NULL)) as checked_out_at,
+            MAX(lb.created_by) as last_activity_by
+        ", FALSE);
+        $this->db->from('bookings b');
+        $this->db->join('guests g', 'b.guest_id = g.id', 'left');
+        $this->db->join('log_booking lb', 'b.id = lb.id_booking', 'left');
+        $this->db->join('rooms r', 'b.room_id = r.id AND b.room_type = "ROOM"', 'left');
+        $this->db->join('rooms_meet rm', 'b.room_id = rm.id AND b.room_type = "MEET"', 'left');
+        
+        if ($start_date && $end_date) {
+            $this->db->where("EXISTS (SELECT 1 FROM log_booking lb2 WHERE lb2.id_booking = b.id AND DATE(lb2.tanggal_activity) BETWEEN '$start_date' AND '$end_date')");
+        }
+
+        $this->db->group_by('b.id');
+        $this->db->order_by('b.created_at', 'DESC');
+        
+        if ($limit !== null && $offset !== null) {
+            $this->db->limit($limit, $offset);
+        }
+
+        return $this->db->get()->result_array();
+    }
+
+    public function count_log_booking_grouped($start_date = null, $end_date = null)
+    {
+        $this->db->from('bookings b');
+        if ($start_date && $end_date) {
+            $this->db->join('log_booking lb', 'b.id = lb.id_booking', 'inner');
+            $this->db->where("DATE(lb.tanggal_activity) BETWEEN '$start_date' AND '$end_date'");
+            $this->db->distinct();
+            $this->db->select('b.id');
+            return $this->db->get()->num_rows();
+        }
+        return $this->db->count_all_results();
     }
 }

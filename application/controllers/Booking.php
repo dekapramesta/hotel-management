@@ -121,6 +121,7 @@ class Booking extends CI_Controller
     public function check_guest_face()
     {
         $room_id = $this->input->get('room_id');
+        $room_type = $this->input->get('room_type') ?: 'ROOM';
 
         if (!$room_id) {
             echo json_encode([
@@ -135,9 +136,10 @@ class Booking extends CI_Controller
             SELECT guest_id 
             FROM bookings 
             WHERE room_id = ?
+            AND room_type = ?
             AND NOW() BETWEEN check_in_date AND check_out_date
             LIMIT 1
-        ", [$room_id])->row();
+        ", [$room_id, $room_type])->row();
 
         if (!$booking) {
             echo json_encode([
