@@ -26,32 +26,67 @@ class Room_model extends CI_Model
 
 
     public function get_rooms_by_floor($floor_id)
-{
-    return $this->db->query("
+    {
+        return $this->db->query("
        select a.status, a.tipe_room, a.id, a.room_number, a.floor_id from ( 
     select r.room_number, r.floor_id, r.status, r.id , 'ROOM' as tipe_room from rooms r
 				union ALL
 				select rm.room_number, rm.floor_id, rm.status, rm.id , 'MEET' as tipe_room from rooms_meet rm
-  ) a WHERE a.floor_id = ? ORDER BY a.room_number ASC
+  ) a WHERE a.floor_id = ? AND a.room_number IS NOT NULL ORDER BY a.room_number ASC
     ", [$floor_id])->result_array();
+    }
+
+    public function get_rooms_by_floor_and_date($floor_id, $start_date, $end_date)
+    {
+        $sql = "
+            SELECT 
+                rs.room_number, 
+                rs.floor_id, 
+                rs.id as room_id,
+                rs.tipe_room,
+                COALESCE(MAX(b.status), rs.physical_status) as status
+            FROM (
+                SELECT r.room_number, r.floor_id, r.status as physical_status, r.id, 'ROOM' as tipe_room FROM rooms r
+                UNION ALL
+                SELECT rm.room_number, rm.floor_id, rm.status as physical_status, rm.id, 'MEET' as tipe_room FROM rooms_meet rm
+            ) rs
+            LEFT JOIN bookings b ON b.room_id = rs.id AND b.room_type = rs.tipe_room 
+                AND (b.check_in_date <= ? AND b.check_out_date >= ?)
+                AND b.status != 'checked_out'
+            WHERE rs.floor_id = ? AND rs.room_number IS NOT NULL
+            GROUP BY rs.id, rs.tipe_room, rs.room_number, rs.floor_id, rs.physical_status
+            ORDER BY rs.room_number ASC
+        ";
+        
+        return $this->db->query($sql, [$end_date, $start_date, $floor_id])->result_array();
     }
 
 
     // Ambil kamar dengan filter
-    public function get_rooms($search = '', $floor_number = '', $status = '') {
+    public function get_rooms($search = '', $floor_number = '', $status = '', $date = '') {
+        if (empty($date)) {
+            $date = date('Y-m-d');
+        }
+
         $sql = "SELECT 
                     rs.room_number, 
                     rs.floor_id, 
-                    rs.status, 
+                    CASE 
+                        WHEN b.status = 'booked' THEN 'booked'
+                        WHEN b.status = 'checked_in' THEN 'occupied'
+                        WHEN rs.physical_status = 'maintenance' THEN 'maintenance'
+                        WHEN rs.physical_status = 'cleaning' THEN 'cleaning'
+                        ELSE 'available'
+                    END as status,
                     f.description, 
                     rs.id AS room_id,
                     rs.tipe_room
                 FROM floors f
-                LEFT JOIN (
+                JOIN (
                     SELECT 
                         r.room_number, 
                         r.floor_id, 
-                        r.status, 
+                        r.status as physical_status, 
                         r.id, 
                         'ROOM' AS tipe_room 
                     FROM rooms r
@@ -59,14 +94,18 @@ class Room_model extends CI_Model
                     SELECT 
                         rm.room_number, 
                         rm.floor_id, 
-                        rm.status, 
+                        rm.status as physical_status, 
                         rm.id, 
                         'MEET' AS tipe_room 
                     FROM rooms_meet rm
-                ) rs ON CAST(rs.floor_id AS CHAR) = CAST(f.id AS CHAR)
-                WHERE 1=1";
+                ) rs ON rs.floor_id = f.id
+                LEFT JOIN bookings b ON b.room_id = rs.id AND b.room_type = rs.tipe_room 
+                      AND (? BETWEEN b.check_in_date AND b.check_out_date)
+                      AND b.status != 'checked_out'";
+        
+        $sql .= " WHERE rs.room_number IS NOT NULL";
 
-        $params = [];
+        $params = [$date];
 
         if (!empty($search)) {
             $sql .= " AND rs.room_number LIKE ?";
@@ -79,7 +118,7 @@ class Room_model extends CI_Model
         }
 
         if (!empty($status)) {
-            $sql .= " AND rs.status = ?";
+            $sql .= " HAVING status = ?";
             $params[] = $status;
         }
 
@@ -105,6 +144,12 @@ class Room_model extends CI_Model
             ]);
         }
     
+    }
+
+    public function get_room_by_id_and_type($id, $type)
+    {
+        $table = ($type === 'MEET') ? 'rooms_meet' : 'rooms';
+        return $this->db->get_where($table, ['id' => $id])->row_array();
     }
 
     // public function setBooked($room_id, $type)
@@ -191,18 +236,58 @@ class Room_model extends CI_Model
         return $this->db->query($sql)->row_array();
     }
 
-     public function count_all_rooms()
+     public function count_all_rooms($date = '')
     {
-        return $this->db
-            ->where('LOWER(status)', strtolower('available'))
-            ->count_all_results('rooms');
+        if (empty($date)) $date = date('Y-m-d');
+        
+        $sql = "SELECT COUNT(*) as total FROM (
+                    SELECT 
+                        CASE 
+                            WHEN b.status = 'booked' THEN 'booked'
+                            WHEN b.status = 'checked_in' THEN 'occupied'
+                            WHEN rs.physical_status = 'maintenance' THEN 'maintenance'
+                            WHEN rs.physical_status = 'cleaning' THEN 'cleaning'
+                            ELSE 'available'
+                        END as calculated_status
+                    FROM (
+                        SELECT id, status as physical_status, 'ROOM' as tipe_room FROM rooms
+                        UNION ALL
+                        SELECT id, status as physical_status, 'MEET' as tipe_room FROM rooms_meet
+                    ) rs
+                    LEFT JOIN bookings b ON b.room_id = rs.id AND b.room_type = rs.tipe_room 
+                        AND (? BETWEEN b.check_in_date AND b.check_out_date)
+                        AND b.status != 'checked_out'
+                ) as results WHERE calculated_status = 'available'";
+        
+        $result = $this->db->query($sql, [$date])->row_array();
+        return $result['total'];
     }
 
-    public function count_rooms_by_status($status)
+    public function count_rooms_by_status($status, $date = '')
     {
-        return $this->db
-            ->where('LOWER(status)', strtolower($status))
-            ->count_all_results('rooms');
+        if (empty($date)) $date = date('Y-m-d');
+        
+        $sql = "SELECT COUNT(*) as total FROM (
+                    SELECT 
+                        CASE 
+                            WHEN b.status = 'booked' THEN 'booked'
+                            WHEN b.status = 'checked_in' THEN 'occupied'
+                            WHEN rs.physical_status = 'maintenance' THEN 'maintenance'
+                            WHEN rs.physical_status = 'cleaning' THEN 'cleaning'
+                            ELSE 'available'
+                        END as calculated_status
+                    FROM (
+                        SELECT id, status as physical_status, 'ROOM' as tipe_room FROM rooms
+                        UNION ALL
+                        SELECT id, status as physical_status, 'MEET' as tipe_room FROM rooms_meet
+                    ) rs
+                    LEFT JOIN bookings b ON b.room_id = rs.id AND b.room_type = rs.tipe_room 
+                        AND (? BETWEEN b.check_in_date AND b.check_out_date)
+                        AND b.status != 'checked_out'
+                ) as results WHERE calculated_status = ?";
+        
+        $result = $this->db->query($sql, [$date, strtolower($status)])->row_array();
+        return $result['total'];
     }
 
     /* =======================

@@ -31,10 +31,12 @@ class Dashboard extends CI_Controller{
       $data['title'] = 'Room Monitoring';
       $data['floors'] = $this->Transaksi_model->get_floor();
       $data['rooms']  = $this->Room_model->get_all_rooms();
-      $data['jumlah_kamar'] = $this->Room_model->count_all_rooms();
-      $data['kamar_terisi'] = $this->Room_model->count_rooms_by_status('occupied');
-      $data['jumlah_meeting_room'] = $this->Room_model->count_meeting_rooms();
-      $data['meeting_room_terisi'] = $this->Room_model->count_meeting_rooms_by_status('occupied');
+      $today = date('Y-m-d');
+      $data['jumlah_kamar'] = $this->Room_model->count_all_rooms($today);
+      $data['kamar_terisi'] = $this->Room_model->count_rooms_by_status('occupied', $today);
+      $data['kamar_cleaning'] = $this->Room_model->count_rooms_by_status('cleaning', $today);
+      $data['kamar_maintenance'] = $this->Room_model->count_rooms_by_status('maintenance', $today);
+      $data['kamar_booked'] = $this->Room_model->count_rooms_by_status('booked', $today);
       
       // $data['floors'] = $this->Room_model->get_all_floors();
       $this->load->view('templates/header', $data);
@@ -43,11 +45,17 @@ class Dashboard extends CI_Controller{
       $this->load->view('templates/footer');
   }
 
-  public function get_rooms_by_floor()
+public function get_rooms_by_floor()
 {
     $floor_id = $this->input->post('floor_id');
+    $start_date = $this->input->post('start_date');
+    $end_date = $this->input->post('end_date');
 
-    $rooms = $this->Room_model->get_rooms_by_floor($floor_id);
+    if ($start_date && $end_date) {
+        $rooms = $this->Room_model->get_rooms_by_floor_and_date($floor_id, $start_date, $end_date);
+    } else {
+        $rooms = $this->Room_model->get_rooms_by_floor($floor_id);
+    }
 
     echo json_encode([
         'success' => true,
@@ -76,12 +84,20 @@ public function verify_booking()
         $search = $this->input->post('search');
         $floor  = $this->input->post('floor');
         $status = $this->input->post('status');
+        $date   = $this->input->post('date');
 
-        $rooms = $this->Room_model->get_rooms($search, $floor, $status);
+        $rooms = $this->Room_model->get_rooms($search, $floor, $status, $date);
 
         echo json_encode([
             'success' => true,
-            'rooms' => $rooms
+            'rooms' => $rooms,
+            'counts' => [
+                'available' => $this->Room_model->count_all_rooms($date),
+                'occupied' => $this->Room_model->count_rooms_by_status('occupied', $date),
+                'cleaning' => $this->Room_model->count_rooms_by_status('cleaning', $date),
+                'maintenance' => $this->Room_model->count_rooms_by_status('maintenance', $date),
+                'booked' => $this->Room_model->count_rooms_by_status('booked', $date)
+            ]
         ]);
     }
 
@@ -120,12 +136,26 @@ public function verify_booking()
   }
 
 
-  public function room_detail($room_id){
+  public function room_detail($room_id, $room_type = 'ROOM'){
+    $this->load->model('Booking_model');
+    $date = $this->input->get('date') ?: date('Y-m-d');
+    
+    $booking = $this->Booking_model->get_active_booking_by_room($room_id, $room_type, $date);
 
-    echo json_encode([
-        'status' => 'success',
-        'data' => ""
-    ]);
+    if ($booking) {
+        echo json_encode([
+            'status' => 'success',
+            'data' => $booking
+        ]);
+    } else {
+        // Jika tidak ada booking active, ambil detail kamar dasar
+        $room = $this->Room_model->get_room_by_id_and_type($room_id, $room_type);
+        echo json_encode([
+            'status' => 'empty',
+            'data' => $room,
+            'message' => 'Tidak ada booking aktif untuk ruangan ini pada tanggal tersebut.'
+        ]);
+    }
   }
 
   public function get_guest($nipp){

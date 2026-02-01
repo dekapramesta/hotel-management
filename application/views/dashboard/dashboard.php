@@ -53,12 +53,28 @@
 
     .room-btn {
       border: none;
-      border-radius: 12px;
+      border-radius: 4px; /* Even tighter */
       color: white;
-      font-weight: 600;
+      font-weight: 500;
+      font-size: 0.6rem; /* Even smaller font for squares */
       transition: 0.2s ease-in-out;
+      aspect-ratio: 1 / 0.9; /* Slightly taller but nearly square */
+      display: flex;
+      flex-direction: column; /* Stack icon and text */
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+      padding: 2px 1px; /* Minimal padding */
+      width: 100%;
     }
 
+    .room-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+        z-index: 10;
+        position: relative;
+    }
+    
     /* Available (Default) */
     .room-btn:not([data-status]) {
       background-color: #4CAF50;
@@ -69,18 +85,38 @@
 
     /* Occupied / Booked */
     .room-btn[data-status="occupied"] {
-      background-color: #90A4AE;
+      background-color: #EF5350;
     }
     .room-btn[data-status="occupied"]:hover {
-      background-color: #78909C;
+      background-color: #E53935;
     }
 
     /* Cleaning / In Progress */
     .room-btn[data-status="cleaning"] {
-      background-color: #EF5350;
+      background-color: #FF9800;
     }
     .room-btn[data-status="cleaning"]:hover {
-      background-color: #E53935;
+      background-color: #FB8C00;
+    }
+
+    /* Maintenance */
+    .room-btn[data-status="maintenance"] {
+      background-color: #90A4AE;
+      cursor: not-allowed;
+      opacity: 0.8;
+    }
+    .room-btn[data-status="maintenance"]:hover {
+      background-color: #90A4AE;
+      transform: none;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+
+    /* Booked */
+    .room-btn[data-status="booked"] {
+      background-color: #1565C0;
+    }
+    .room-btn[data-status="booked"]:hover {
+      background-color: #0D47A1;
     }
 
     .modal-content {
@@ -241,6 +277,18 @@
   margin-top: 4px;
 }
 
+/* Custom Grid Utilities for Square Dense Layout */
+.row-cols-12 > * { flex: 0 0 auto; width: 8.33333333%; }
+.row-cols-md-18 > * { flex: 0 0 auto; width: 5.55555556%; }
+.row-cols-lg-24 > * { flex: 0 0 auto; width: 4.16666667%; }
+@media (min-width: 768px) {
+    .row-cols-md-18 > * { flex: 0 0 auto; width: 5.55555556%; }
+}
+@media (min-width: 992px) {
+    .row-cols-lg-24 > * { flex: 0 0 auto; width: 4.16666667%; }
+}
+
+
   </style>
 </head>
 <body>
@@ -278,14 +326,22 @@
       </div>
 
       <!-- Status -->
-      <div class="col-md-4">
+      <div class="col-md-3">
         <label class="filter-label">Status</label>
         <select class="form-select filter-select" id="filter-status">
           <option value="">Semua Status</option>
           <option value="available">Tersedia</option>
-          <option value="booked">Terisi</option>
+          <option value="occupied">Terpakai</option>
+          <option value="booked">Booked</option>
           <option value="cleaning">Sedang Dibersihkan</option>
+          <option value="maintenance">Maintenance</option>
         </select>
+      </div>
+
+      <!-- Tanggal Filter -->
+      <div class="col-md-3">
+        <label class="filter-label">Filter Tanggal Booking</label>
+        <input type="date" class="form-control filter-input" id="filter-date" placeholder="Pilih tanggal">
       </div>
 
     </div>
@@ -309,25 +365,64 @@
   </div>
 
   <div class="col-md-3 col-6">
-    <div class="summary-box bg-primary-subtle text-primary shadow-sm">
-      <div class="summary-title">Meeting Room</div>
-      <div class="summary-value" id="count-meeting-total">
-        <?= $jumlah_meeting_room ?>
-      </div>
+    <div class="summary-box bg-warning-subtle text-warning shadow-sm">
+      <div class="summary-title">Cleaning</div>
+      <div class="summary-value" id="count-cleaning"><?= $kamar_cleaning ?></div>
     </div>
   </div>
 
   <div class="col-md-3 col-6">
-    <div class="summary-box bg-warning-subtle text-warning shadow-sm">
-      <div class="summary-title">Meeting Digunakan</div>
-      <div class="summary-value" id="count-meeting-used"> <?= $meeting_room_terisi ?> </div>
+    <div class="summary-box bg-secondary-subtle text-secondary shadow-sm">
+      <div class="summary-title">Maintenance</div>
+      <div class="summary-value" id="count-maintenance"><?= $kamar_maintenance ?></div>
+    </div>
+  </div>
+
+  <div class="col-md-3 col-6">
+    <div class="summary-box bg-primary-subtle text-primary shadow-sm">
+      <div class="summary-title">Booked</div>
+      <div class="summary-value" id="count-booked-status"><?= isset($kamar_booked) ? $kamar_booked : 0 ?></div>
     </div>
   </div>
 
 </div>
 
+  <!-- LEGEND STATUS KAMAR -->
+  <div class="card mb-4 shadow-sm">
+    <div class="card-body py-3">
+      <div class="d-flex flex-wrap justify-content-center align-items-center gap-3">
+        <span class="fw-semibold text-muted me-2">Keterangan Status:</span>
+        
+        <div class="d-flex align-items-center">
+          <div style="background-color: #4CAF50; width: 24px; height: 24px; border-radius: 4px;"></div>
+          <span class="ms-2 small fw-semibold">Tersedia</span>
+        </div>
+        
+        <div class="d-flex align-items-center">
+          <div style="background-color: #EF5350; width: 24px; height: 24px; border-radius: 4px;"></div>
+          <span class="ms-2 small fw-semibold">Terisi</span>
+        </div>
+        
+        <div class="d-flex align-items-center">
+          <div style="background-color: #FF9800; width: 24px; height: 24px; border-radius: 4px;"></div>
+          <span class="ms-2 small fw-semibold">Cleaning</span>
+        </div>
+        
+        <div class="d-flex align-items-center">
+          <div style="background-color: #90A4AE; width: 24px; height: 24px; border-radius: 4px;"></div>
+          <span class="ms-2 small fw-semibold">Maintenance</span>
+        </div>
+        
+        <div class="d-flex align-items-center">
+          <div style="background-color: #1565C0; width: 24px; height: 24px; border-radius: 4px;"></div>
+          <span class="ms-2 small fw-semibold">Booked</span>
+        </div>
+      </div>
+    </div>
+  </div>
 
-  <!-- Tombol Booking -->
+
+
   <!-- File: application/views/dashboard/index.php (bagian header) -->
   <div class="d-flex justify-content-between align-items-center mb-3">
       <h5 class="fw-semibold mb-0 text-muted">Daftar Kamar</h5>
@@ -535,6 +630,32 @@
 </div>
 
 
+<!-- Modal Detail Kamar (Occupied/Booked) -->
+<div class="modal fade" id="roomDetailModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-md modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+      <div class="modal-header bg-toska text-white border-0 py-3">
+        <h5 class="modal-title fw-bold">
+          <i class="bi bi-info-circle-fill me-2"></i>Detail Hunian Kamar
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-4" id="roomDetailContent">
+        <!-- Content will be loaded via AJAX -->
+        <div class="text-center py-4">
+          <div class="spinner-border text-toska" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer border-0 bg-light p-3">
+        <button type="button" class="btn btn-secondary px-4 rounded-pill" data-bs-dismiss="modal">Tutup</button>
+        <div id="roomDetailActions"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Modal Entry Data Booking -->
 <!-- ============================
       MODAL FORM WIZARD BOOKING
@@ -565,9 +686,19 @@
             <div class="row g-3">
 
               <div class="col-md-6">
+                <label class="form-label fw-semibold text-muted">Tanggal Check-in</label>
+                <input type="date" class="form-control" id="tglCheckin" required>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label fw-semibold text-muted">Tanggal Check-out</label>
+                <input type="date" class="form-control" id="tglCheckout" required>
+              </div>
+
+              <div class="col-md-6">
                 <label class="form-label fw-semibold text-muted">Lantai</label>
-                <select class="form-select" id="lantaiKamar" required>
-                  <option selected disabled>Pilih Lantai</option>
+                <select class="form-select" id="lantaiKamar" required disabled>
+                  <option selected disabled>Pilih Lantai (Pilih Tanggal Dulu)</option>
                   <?php foreach ($floors as $f) { ?>
                     <option value="<?= $f['id']; ?>">
                       <?= $f['description']; ?>
@@ -578,19 +709,9 @@
 
               <div class="col-md-6">
                 <label class="form-label fw-semibold text-muted">Nomor Kamar</label>
-                <select class="form-select" id="nomorKamar" required>
+                <select class="form-select" id="nomorKamar" required disabled>
                   <option selected disabled>Pilih Nomor Kamar</option>
                 </select>
-              </div>
-
-              <div class="col-md-6">
-                <label class="form-label fw-semibold text-muted">Tanggal Check-in</label>
-                <input type="date" class="form-control" id="tglCheckin" required>
-              </div>
-
-              <div class="col-md-6">
-                <label class="form-label fw-semibold text-muted">Tanggal Check-out</label>
-                <input type="date" class="form-control" id="tglCheckout" required>
               </div>
 
             </div>
@@ -1177,14 +1298,14 @@ function displayBookingResults(bookings) {
     bookings.forEach(function(booking) {
         // Format tanggal
         const checkinDate = booking.check_in_date ? 
-            new Date(booking.checkin_date).toLocaleDateString('id-ID') : '-';
+            new Date(booking.check_in_date).toLocaleDateString('id-ID') : '-';
         const checkoutDate = booking.check_out_date ? 
-            new Date(booking.checkout_date).toLocaleDateString('id-ID') : '-';
+            new Date(booking.check_out_date).toLocaleDateString('id-ID') : '-';
         let buttonCheckin = '';
         if(booking.booking_status.toLowerCase() === 'booked'){
           buttonCheckin = `
             <button class="btn btn-sm btn-toska" 
-                            onclick="openCheckinModal('${booking.booking_id}', '${booking.room_id || ''}')"
+                            onclick="openCheckinModal('${booking.booking_id}', '${booking.room_id || ''}', '${booking.check_in_date || ''}', '${booking.room_type || 'ROOM'}')"
                             title="Lakukan Check-in untuk booking ini">
                         <i class="bi bi-box-arrow-in-right me-1"></i> Check In
                     </button>
@@ -1220,8 +1341,8 @@ function displayBookingResults(bookings) {
                     <span class="badge bg-primary">${booking.room_number || '-'}</span>
                 </td>
                 <td>${booking.floor_name || '-'}</td>
-                <td>${checkinDate}</td>
-                <td>${checkoutDate}</td>
+                <td>${booking.check_in_date ? checkinDate : '-'}</td>
+                <td>${booking.check_out_date ? checkoutDate : '-'}</td>
                 <td>
                     <span class="badge ${booking.room_type === 'ROOM' ? 'bg-success' : 'bg-warning'}">
                         ${booking.room_type || '-'}
@@ -1257,15 +1378,33 @@ function displayBookingResults(bookings) {
 }
 
 // Fungsi untuk membuka modal check-in dari hasil pencarian
-window.openCheckinModal = function(bookingId, roomId) {
-    console.log('Membuka check-in untuk booking:', bookingId, 'room:', roomId);
+window.openCheckinModal = function(bookingId, roomId, checkinDate, roomType = 'ROOM') {
+    console.log('Membuka check-in untuk booking:', bookingId, 'room:', roomId, 'date:', checkinDate, 'type:', roomType);
     
+    if (checkinDate) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        const bookingDate = new Date(checkinDate);
+        bookingDate.setHours(0, 0, 0, 0);
+        
+        if (bookingDate.getTime() !== today.getTime()) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Belum Saatnya Check-in',
+                text: 'Tanggal check-in pesanan ini adalah ' + bookingDate.toLocaleDateString('id-ID') + '. Belum saatnya untuk check-in hari ini.',
+                confirmButtonColor: '#20c997'
+            });
+            return;
+        }
+    }
+
     // Tutup modal pencarian booking
     $('#bookingSearchModal').modal('hide');
     
     // Buka modal room check-in
     if (roomId && bookingId) {
-        loadDataRoom(roomId, bookingId);
+        loadDataRoom(roomId, bookingId, roomType);
     } else {
         // Jika tidak ada roomId, tampilkan alert
         alert('Kamar tidak ditemukan untuk booking ini');
@@ -1546,29 +1685,65 @@ function stopCameraLama() {
 });
 
 
-  $('#lantaiKamar').change(function () {
-
-    let floorId = $(this).val();
-
-    $.ajax({
-        url: '<?= base_url("Dashboard/get_rooms_by_floor"); ?>',
-        type: 'POST',
-        data: { floor_id: floorId },
-        dataType: 'json',
-        success: function(response) {
-
-            let rooms = response.rooms;
-            let html = `<option selected disabled>Pilih Nomor Kamar</option>`;
-
-            rooms.forEach(r => {
-                html += `<option value="${r.room_number}">${r.room_number}</option>`;
-            });
-
-            $("#nomorKamar").html(html);
+    function toggleFloorRoom() {
+        const start = $('#tglCheckin').val();
+        const end = $('#tglCheckout').val();
+        
+        if (start && end) {
+            $('#lantaiKamar').prop('disabled', false).find('option:first').text('Pilih Lantai');
+            // If floor is already selected, reload rooms
+            if ($('#lantaiKamar').val()) {
+                $('#lantaiKamar').trigger('change');
+            }
+        } else {
+            $('#lantaiKamar').prop('disabled', true).val(null).find('option:first').text('Pilih Lantai (Pilih Tanggal Dulu)');
+            $('#nomorKamar').prop('disabled', true).html('<option selected disabled>Pilih Nomor Kamar</option>');
         }
+    }
+
+    $('#tglCheckin, #tglCheckout').change(function() {
+        toggleFloorRoom();
     });
 
-});
+    $('#lantaiKamar').change(function () {
+        const floorId = $(this).val();
+        const start = $('#tglCheckin').val();
+        const end = $('#tglCheckout').val();
+
+        if (!floorId || !start || !end) return;
+
+        $.ajax({
+            url: '<?= base_url("Dashboard/get_rooms_by_floor"); ?>',
+            type: 'POST',
+            data: { 
+                floor_id: floorId,
+                start_date: start,
+                end_date: end
+            },
+            dataType: 'json',
+            beforeSend: function() {
+                $("#nomorKamar").prop('disabled', true).html('<option selected disabled>Loading...</option>');
+            },
+            success: function(response) {
+                let rooms = response.rooms;
+                let html = `<option selected disabled>Pilih Nomor Kamar</option>`;
+
+                rooms.forEach(r => {
+                    const status = r.status.toLowerCase();
+                    const isAvailable = (status === 'available' || status === 'cleaning');
+                    const statusLabel = isAvailable ? '' : ` (${r.status})`;
+                    const disabledAttr = isAvailable ? '' : 'disabled';
+                    
+                    html += `<option value="${r.room_number}" ${disabledAttr}>${r.room_number}${statusLabel}</option>`;
+                });
+
+                $("#nomorKamar").html(html).prop('disabled', false);
+            },
+            error: function() {
+                $("#nomorKamar").html('<option selected disabled>Gagal memuat kamar</option>');
+            }
+        });
+    });
 
     // =============================================
     // BOOKING WIZARD FUNCTIONALITY
@@ -2797,23 +2972,23 @@ let checkin_cameraBaru = null;
 let checkin_fotoListBaru = [];
 let checkin_fotoCounter = 0;
 
-function loadDataRoom(room_id, booking_id) {
-    $.get("dashboard/room_detail/" + room_id, function(res) {
+function loadDataRoom(room_id, booking_id, room_type = 'ROOM') {
+    $.get("dashboard/room_detail/" + room_id + "/" + room_type, function(res) {
         $("#room_id").val(room_id);
         $("#booking_id").val(booking_id);
         
         // Check apakah tamu baru atau lama
-        checkUserFace(room_id);
+        checkUserFace(room_id, room_type);
         
         $("#roomModal").modal("show");
     });
 }
 
-function checkUserFace(room_id) {
+function checkUserFace(room_id, room_type = 'ROOM') {
     $.ajax({
         url: "booking/check_guest_face",
         type: "GET",
-        data: { room_id: room_id },
+        data: { room_id: room_id, room_type: room_type },
         success: function(res) {
             try { res = JSON.parse(res); } catch(e){}
             if (!res.success) {
@@ -3051,102 +3226,244 @@ function createFaceMeshNew(onResultsCallback) {
     }
 
     
-function renderRoom(room) {
+function openRoomDetail(room_id, tipe_room) {
+    const filterDate = $('#filter-date').val() || '';
+    
+    $('#roomDetailModal').modal('show');
+    $('#roomDetailContent').html(`
+        <div class="text-center py-5">
+            <div class="spinner-border text-toska" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2 text-muted">Mengambil data...</p>
+        </div>
+    `);
+    $('#roomDetailActions').empty();
+
+    $.ajax({
+        url: '<?= base_url("dashboard/room_detail/"); ?>' + room_id + '/' + tipe_room,
+        type: 'GET',
+        data: { date: filterDate },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                const b = response.data;
+                const statusColor = b.booking_status === 'occupied' ? 'danger' : 'primary';
+                const statusLabel = b.booking_status === 'occupied' ? 'Sedang Digunakan' : 'Reservasi Terkonfirmasi';
+
+                let html = `
+                    <div class="text-center mb-4">
+                        <div class="badge bg-${statusColor} bg-opacity-10 text-${statusColor} px-3 py-2 rounded-pill mb-2 border border-${statusColor} border-opacity-25">
+                            <i class="bi bi-tag-fill me-1"></i> ${statusLabel}
+                        </div>
+                        <h4 class="fw-bold mb-0">${b.nama}</h4>
+                        <p class="text-muted small">${b.nipp || '-'}</p>
+                    </div>
+
+                    <div class="card bg-light border-0 rounded-4 mb-4">
+                        <div class="card-body p-3">
+                            <div class="row g-3">
+                                <div class="col-6">
+                                    <label class="text-muted small d-block mb-1">Check-in</label>
+                                    <div class="fw-bold"><i class="bi bi-calendar-check text-toska me-1"></i> ${b.check_in_date}</div>
+                                </div>
+                                <div class="col-6">
+                                    <label class="text-muted small d-block mb-1">Check-out</label>
+                                    <div class="fw-bold"><i class="bi bi-calendar-x text-danger me-1"></i> ${b.check_out_date}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y shadow-sm p-3 rounded-4 bg-white border">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-toska bg-opacity-10 text-toska rounded-3 p-2 me-3">
+                                <i class="bi bi-person-badge"></i>
+                            </div>
+                            <div>
+                                <div class="small text-muted">Jabatan / Unit</div>
+                                <div class="fw-semibold">${b.jabatan || '-'}</div>
+                                <div class="small">${b.unit_induk || '-'}</div>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-primary bg-opacity-10 text-primary rounded-3 p-2 me-3">
+                                <i class="bi bi-telephone-fill"></i>
+                            </div>
+                            <div>
+                                <div class="small text-muted">Kontak</div>
+                                <div class="fw-semibold">${b.telepon || '-'}</div>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <div class="bg-warning bg-opacity-10 text-warning rounded-3 p-2 me-3">
+                                <i class="bi bi-car-front-fill"></i>
+                            </div>
+                            <div>
+                                <div class="small text-muted">Kendaraan</div>
+                                <div class="fw-semibold">${b.kendaraan || '-'} (${b.nomor_polisi || '-'})</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                $('#roomDetailContent').html(html);
+
+                // Actions
+                if (b.booking_status === 'occupied') {
+                    $('#roomDetailActions').html(`
+                        <button class="btn btn-danger rounded-pill px-4" onclick="openCheckOut('${b.booking_id}')">
+                            <i class="bi bi-box-arrow-right me-1"></i> Check Out
+                        </button>
+                    `);
+                }
+            } else if (response.status === 'empty') {
+                const r = response.data;
+                $('#roomDetailContent').html(`
+                    <div class="text-center py-4">
+                        <div class="display-1 text-muted opacity-25 mb-3">
+                            <i class="bi bi-door-open"></i>
+                        </div>
+                        <h5 class="fw-bold">Kamar Kosong</h5>
+                        <p class="text-muted">${response.message}</p>
+                        <div class="mt-4">
+                            <button class="btn btn-outline-toska rounded-pill px-4" onclick="openNewBooking('${r.room_number}', '${r.floor_id}')">
+                                <i class="bi bi-plus-circle me-1"></i> Buat Booking Baru
+                            </button>
+                        </div>
+                    </div>
+                `);
+            } else {
+                $('#roomDetailContent').html(`
+                    <div class="alert alert-danger m-3">
+                        <i class="bi bi-exclamation-triangle me-2"></i> Gagal memuat data.
+                    </div>
+                `);
+            }
+        },
+        error: function() {
+            $('#roomDetailContent').html(`
+                <div class="alert alert-danger m-3">
+                    <i class="bi bi-exclamation-triangle me-2"></i> Terjadi kesalahan jaringan.
+                </div>
+            `);
+        }
+    });
+}
+
+// Helper functions for detail actions
+window.openNewBooking = function(roomNumber, floorId) {
+    $('#roomDetailModal').modal('hide');
+    $('#bookingWizardModal').modal('show');
+    // Set floor and room
+    $('#lantaiKamar').val(floorId).trigger('change');
+    setTimeout(() => {
+        $('#nomorKamar').val(roomNumber);
+    }, 500);
+};
+
+function renderRoom(room, usePrefix = false) {
     let statusAttr = '';
-    if (room.status === 'booked') statusAttr = 'data-status="occupied"';
+    if (room.status === 'occupied') statusAttr = 'data-status="occupied"';
+    else if (room.status === 'booked') statusAttr = 'data-status="booked"';
     else if (room.status === 'cleaning') statusAttr = 'data-status="cleaning"';
+    else if (room.status === 'maintenance') statusAttr = 'data-status="maintenance"';
+
+    let displayName = room.room_number;
+
+    if (usePrefix) {
+        // Logic Prefix:
+        // Jika lantai deskripsi mengandung angka (Lantai 2), ambil angkanya.
+        // Jika text (Mezzanine), ambil huruf depan.
+        let prefix = '';
+        let floorDesc = room.description || ''; // e.g. "Lantai 2" or "Mezzanine"
+        
+        // Cek jika ada angka di description
+        let match = floorDesc.match(/\d+/);
+        if (match) {
+            prefix = match[0];
+        } else {
+            // Ambil huruf pertama uppercase
+            prefix = floorDesc.charAt(0).toUpperCase();
+        }
+
+        // Gabung prefix + room number
+        // Jika room number sudah mengandung huruf (e.g. MR-101), tempel aja
+        // Contoh: M + MR-101 -> MMR-101
+        // Contoh: 2 + 201 -> 2201
+        displayName = prefix + displayName;
+    }
+
+    // Jangan tambahkan onclick jika status maintenance
+    const onclickAttr = room.status === 'maintenance' ? '' : `onclick="openRoomDetail('${room.room_id}', '${room.tipe_room}')"`;
 
     return `
         <div class="col">
-            <button class="room-btn w-100 py-3" ${statusAttr}>
-                ${room.room_number}
+            <button class="room-btn w-100" ${statusAttr} ${onclickAttr} title="${room.description} - ${room.room_number}">
+                ${room.tipe_room === 'MEET' ? '<i class="bi bi-easel2 me-1" style="font-size:0.6rem;"></i>' : ''} 
+                ${displayName}
             </button>
         </div>
     `;
 }
 
 
-function loadRooms(search = '', floor = '', status = '') {
+function loadRooms(search = '', floor = '', status = '', date = '') {
     $.ajax({
         url: '<?= base_url("dashboard/filter") ?>',
         method: 'POST',
-        data: { search, floor, status },
+        data: { search, floor, status, date },
         dataType: 'json',
         success: function(result) {
-    if (!result.success) return;
+            if (!result.success) return;
 
-    const rooms = result.rooms;
-    const floors = {};
+            const rooms = result.rooms;
+            const counts = result.counts;
 
-    // 1. Group data per lantai dan tipe
-    rooms.forEach(r => {
-        if (!floors[r.floor_id]) {
-            floors[r.floor_id] = {
-                description: r.description,
-                ROOM: [],
-                MEET: []
-            };
-        }
-        if (r.tipe_room === 'ROOM') floors[r.floor_id].ROOM.push(r);
-        if (r.tipe_room === 'MEET') floors[r.floor_id].MEET.push(r);
-    });
+            // Update Summary Counts
+            if (counts) {
+                $('#count-available').text(counts.available);
+                $('#count-booked').text(counts.occupied);
+                $('#count-cleaning').text(counts.cleaning);
+                $('#count-maintenance').text(counts.maintenance);
+                $('#count-booked-status').text(counts.booked);
+            }
+            
+            // 1. Flatten & Sort (By Floor ID, then by Room Number)
+            rooms.sort((a, b) => {
+                if (a.floor_id !== b.floor_id) {
+                    return a.floor_id - b.floor_id;
+                }
+                return a.room_number.localeCompare(b.room_number, undefined, { numeric: true });
+            });
 
-    // 2. Render HTML TERPISAH
-    let html = `
-        <div class="row">
-            <!-- KIRI : KAMAR -->
-            <div class="col-md-6">
-                <h5 class="fw-bold mb-3">RUANG KAMAR</h5>
-    `;
-
-    Object.keys(floors).forEach(floorId => {
-        const floor = floors[floorId];
-        if (!floor.ROOM.length) return;
-
-        html += `
-            <div class="card mb-4 shadow-sm">
-                <div class="card-header">${floor.description}</div>
-                <div class="card-body">
-                    <div class="row row-cols-2 row-cols-md-3 g-3">
-                        ${floor.ROOM.map(room => renderRoom(room)).join('')}
+            // 2. Render Single Grid Layout
+            let html = `
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span>Semua Lantai & Kamar</span>
+                        <span class="badge bg-white text-primary">${rooms.length} Unit</span>
+                    </div>
+                    <div class="card-body">
+                        <!-- Maximum Dense Grid: row-cols-12 up to row-cols-lg-24 -->
+                        <div class="row row-cols-12 row-cols-sm-12 row-cols-md-18 row-cols-lg-24 g-1"> 
+                            ${rooms.map(room => renderRoom(room, true)).join('')}
+                        </div>
                     </div>
                 </div>
-            </div>
-        `;
-    });
+            `;
 
-    html += `
-            </div>
-
-            <!-- KANAN : MEETING -->
-            <div class="col-md-6">
-                <h5 class="fw-bold mb-3">RUANG RAPAT</h5>
-    `;
-
-    Object.keys(floors).forEach(floorId => {
-        const floor = floors[floorId];
-        if (!floor.MEET.length) return;
-
-        html += `
-            <div class="card mb-4 shadow-sm">
-                <div class="card-header">${floor.description}</div>
-                <div class="card-body">
-                    <div class="row row-cols-2 row-cols-md-3 g-3">
-                        ${floor.MEET.map(room => renderRoom(room)).join('')}
+            // Jika tidak ada data
+            if(!rooms.length) {
+                 html = `
+                    <div class="text-center py-5">
+                        <i class="bi bi-search display-1 text-muted"></i>
+                        <p class="mt-3 text-muted">Tidak ada ruangan ditemukan.</p>
                     </div>
-                </div>
-            </div>
-        `;
-    });
+                `;
+            }
 
-    html += `
-            </div>
-        </div>
-    `;
-
-    $('#rooms-container').html(html);
-},
-
+            $('#rooms-container').html(html);
+        },
         error: function(err) {
             console.error(err);
         }
@@ -3154,11 +3471,12 @@ function loadRooms(search = '', floor = '', status = '') {
 }
 
 // Event filter
-$('#filter-search, #filter-lantai, #filter-status').on('input change', function() {
+$('#filter-search, #filter-lantai, #filter-status, #filter-date').on('input change', function() {
     const search = $('#filter-search').val();
     const floor = $('#filter-lantai').val();
     const status = $('#filter-status').val();
-    loadRooms(search, floor, status);
+    const date = $('#filter-date').val();
+    loadRooms(search, floor, status, date);
 });
 
 

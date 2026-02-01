@@ -28,7 +28,7 @@
         </li>
 
         <li class="nav-item">
-          <a class="nav-link px-2" href="<?= base_url('reports'); ?>">Reports</a>
+          <a class="nav-link px-2" href="<?= base_url('report'); ?>">Booking Report</a>
         </li>
 
       </ul>
